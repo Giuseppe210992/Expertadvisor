@@ -1,0 +1,21 @@
+EURUSD short 5x, calo 5% / rimbalzo 3%, per sotto-periodo (ogni periodo riparte da capitale 1):
+  2005->2008-07: EURUSD 1.358->1.558 (+15%)  totale +5%  DD max 24%
+  2008-07->2012: EURUSD 1.579->1.320 (-16%)  totale +105%  DD max 15%
+  2012->2016: EURUSD 1.295->1.052 (-19%)  totale +79%  DD max 16%
+  2016->2020-06: EURUSD 1.085->1.080 (-0%)  totale +0%  DD max 28%
+  2005->2012: EURUSD 1.358->1.320 (-3%)  totale +128%  DD max 24%
+  2013->2020-06: EURUSD 1.318->1.080 (-18%)  totale +51%  DD max 17%
+
+Griglia completa short 5x, 2005-2020 (calo X / rimbalzo R):
+  X=3% R=2%: totale -24%  DD max 65%
+  X=3% R=3%: totale +100%  DD max 72%
+  X=3% R=5%: totale +53%  DD max 95%
+  X=5% R=2%: totale +79%  DD max 23%
+  X=5% R=3%: totale +178%  DD max 24%
+  X=5% R=5%: totale +65%  DD max 46%
+  X=7% R=2%: totale +37%  DD max 28%
+  X=7% R=3%: totale +154%  DD max 15%
+  X=7% R=5%: totale +47%  DD max 37%
+  X=10% R=2%: totale -98%  DD max 100%
+  X=10% R=3%: totale +21%  DD max 48%
+  X=10% R=5%: totale -100%  DD max 100%  CONTO AZZERATO

@@ -27,12 +27,13 @@ def run(p,X,R,h,escal):
                 if escal and r<0: mult*=2
     if sh: real+=vol*(sh-P[-1])/p0
     return (P[-1]-p0)/p0, real, n, w, dd, ruin
-for sym in ["NAS100_USD","SPX500_USD","XAU_USD","EUR_USD"]:
-    p=d1(sym)
-    print(f"\n{sym} {p.index[0].date()}->{p.index[-1].date()}")
-    for (X,R),h,e in itertools.product([(.05,.03),(.10,.03)],[1,2,3,5],[False,True]):
-        if e and h>1: continue
-        bh,s,n,w,dd,ruin=run(p,X,R,h,e)
-        lab=("raddoppio a ogni copertura persa" if e else f"short {h}x il long")
-        print(f"  cala {X:.0%}/rimbalzo {R:.0%}, {lab:33s}: long {bh:+.0%} short {s:+.0%} totale {bh+s:+.0%} | "
-              f"coperture {n} (in utile {w}) | drawdown max {dd:.0%}{'  -> CONTO AZZERATO' if ruin else ''}")
+if __name__=="__main__":
+  for sym in ["NAS100_USD","SPX500_USD","XAU_USD","EUR_USD"]:
+      p=d1(sym)
+      print(f"\n{sym} {p.index[0].date()}->{p.index[-1].date()}")
+      for (X,R),h,e in itertools.product([(.05,.03),(.10,.03)],[1,2,3,5],[False,True]):
+          if e and h>1: continue
+          bh,s,n,w,dd,ruin=run(p,X,R,h,e)
+          lab=("raddoppio a ogni copertura persa" if e else f"short {h}x il long")
+          print(f"  cala {X:.0%}/rimbalzo {R:.0%}, {lab:33s}: long {bh:+.0%} short {s:+.0%} totale {bh+s:+.0%} | "
+                f"coperture {n} (in utile {w}) | drawdown max {dd:.0%}{'  -> CONTO AZZERATO' if ruin else ''}")
