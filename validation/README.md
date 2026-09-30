@@ -1,6 +1,6 @@
 # Validazione out-of-sample e confronto broker
 
-Protocollo: [`docs/VALIDAZIONE_2020_2026.md`](../docs/VALIDAZIONE_2020_2026.md) (pre-registrato, tag git `variante-C-congelata`).
+Protocollo: [`docs/VALIDAZIONE_2020_2026.md`](../docs/VALIDAZIONE_2020_2026.md) (pre-registrato; stato congelato = commit `f80349f`).
 
 | File | Uso |
 |---|---|

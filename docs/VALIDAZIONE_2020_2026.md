@@ -1,6 +1,6 @@
 # Protocollo di validazione out-of-sample 2020-2026: variante C
 
-*Pre-registrazione. Questo documento viene scritto e committato **prima** di guardare qualsiasi risultato 2020-2026. Il commit è marcato con il tag git `variante-C-congelata`. Qualsiasi modifica successiva a strategia, parametri o criteri rende il test non valido e va dichiarata come nuova ricerca.*
+*Pre-registrazione. Questo documento viene scritto e committato **prima** di guardare qualsiasi risultato 2020-2026. Lo stato congelato è il commit **`f80349f44bfbf2c09ea372c90a7a64f78d143307`** (branch `claude/youthful-thompson-qvgmxl`). Il tag `variante-C-congelata` è stato creato solo in locale, perché da questo ambiente non era pubblicabile: si può crearlo su GitHub puntando a quel commit. Qualsiasi modifica successiva a strategia, parametri o criteri rende il test non valido e va dichiarata come nuova ricerca.*
 
 ## 1. Principi
 
@@ -15,7 +15,7 @@
 | Elemento | Valore |
 |---|---|
 | Strategia | variante C (`docs/ANALISI_STRATEGIA_CTO.md`, sezioni 3 e 5.2) |
-| Parametri | `MQL5/Presets/CTO_VarianteC_congelata.set` (identici ai default dell'EA al tag `variante-C-congelata`) |
+| Parametri | `MQL5/Presets/CTO_VarianteC_congelata.set` (identici ai default dell'EA al commit `f80349f`) |
 | Periodo | 1 gennaio 2020 → 30 settembre 2026 |
 | Strumenti (un test per simbolo) | EURUSD, GBPUSD, USDJPY, XAUUSD, NAS100, SPX500 (US500), WTI (USOIL), con i nomi esatti del broker |
 | Dati | storico del broker scelto; modalità **"Ogni tick basato su tick reali"** |
@@ -28,7 +28,7 @@ Nota: USDJPY non era nel dataset di ricerca, quindi è un test fuori campione an
 
 ## 3. Procedura
 
-1. `git checkout variante-C-congelata` e copia di `MQL5/` nella cartella dati del terminale; compilazione in MetaEditor (0 errori).
+1. `git checkout f80349f` (o il tag `variante-C-congelata`, se creato) e copia di `MQL5/` nella cartella dati del terminale; compilazione in MetaEditor (0 errori).
 2. Verifica visuale su 2-3 mesi di un simbolo: ingressi solo dopo la chiusura D1 e fuori rollover, presa di profitto giornaliera quando il movimento favorevole raggiunge 0,5 ATR, stop sul server a 4 ATR.
 3. Per ciascuno dei 7 simboli: Strategy Tester con il preset congelato, dal 2020-01-01 al 2026-09-30, deposito 10.000.
 4. Raccolta dei log da `Common\Files`: `CTO_trades_<simbolo>_710100_tester.csv` (e `CTO_daily_*.csv`). Il file del tester viene riscritto a ogni test: copiarlo dopo ogni simbolo.
