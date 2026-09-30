@@ -160,7 +160,11 @@ void OnStart(void)
       double swLpct = (notionalMin > 0) ? swL * 360.0 / notionalMin * 100.0 : 0.0;
       double swSpct = (notionalMin > 0) ? swS * 360.0 / notionalMin * 100.0 : 0.0;
       double margin = 0.0;
-      OrderCalcMargin(ORDER_TYPE_BUY, s, minLot, SymbolInfoDouble(s, SYMBOL_ASK), margin);
+      if(!OrderCalcMargin(ORDER_TYPE_BUY, s, minLot, SymbolInfoDouble(s, SYMBOL_ASK), margin))
+        {
+         margin = -1.0;   // calcolo non riuscito: segnalato nel file con -1
+         PrintFormat("%s: OrderCalcMargin non riuscito (errore %d): margine non disponibile", s, GetLastError());
+        }
       double riskMin = InpStopAtr * atrv * minLot * vpu;
       //--- costi attesi della variante C con il lotto minimo: round-trip + swap (caso peggiore tra long e short)
       double swapWorst = MathMin(swL, swS);                       // negativo = costo
