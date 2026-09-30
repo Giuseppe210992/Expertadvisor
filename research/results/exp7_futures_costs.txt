@@ -1,0 +1,13 @@
+                                                             scenario    variant  net_pct    cagr  sharpe  max_dd    net_core       net_ov         swap
+0                                                   CFD retail (base)  CORE_ONLY   0.0128  0.0008  0.0853  0.0318 15,412.6599       0.0000 -24,334.3279
+1                                                   CFD retail (base)  ORIGINALE  -0.0041 -0.0003 -0.0221  0.0383 15,561.4788 -20,328.8851 -26,823.7698
+2                                                   CFD retail (base)   PROPOSTA   0.0161  0.0010  0.1063  0.0292 15,461.4898   3,890.1606 -24,461.2124
+3                                          finanziamento senza markup  CORE_ONLY   0.0375  0.0024  0.2380  0.0274 45,107.7059       0.0000   5,021.8001
+4                                          finanziamento senza markup  ORIGINALE   0.0222  0.0014  0.1495  0.0319 44,992.8358 -18,264.5352   4,488.3348
+5                                          finanziamento senza markup   PROPOSTA   0.0413  0.0026  0.2615  0.0246 45,643.5506   3,939.2537   5,365.5822
+6                     futures-like (no markup, costi esecuzione x0.5)  CORE_ONLY   0.0391  0.0025  0.2478  0.0270 47,011.4698       0.0000   5,027.6019
+7                     futures-like (no markup, costi esecuzione x0.5)  ORIGINALE   0.0259  0.0017  0.1735  0.0310 46,951.3121 -15,759.4520   4,500.0114
+8                     futures-like (no markup, costi esecuzione x0.5)   PROPOSTA   0.0430  0.0027  0.2721  0.0242 47,556.6337   4,107.9372   5,371.7955
+9   futures-like (no markup, costi esecuzione x0.5) rischio 2%/sleeve   PROPOSTA   0.0848  0.0053  0.2704  0.0478         NaN          NaN          NaN
+10  futures-like (no markup, costi esecuzione x0.5) rischio 4%/sleeve   PROPOSTA   0.1628  0.0099  0.2654  0.0933         NaN          NaN          NaN
+11  futures-like (no markup, costi esecuzione x0.5) rischio 8%/sleeve   PROPOSTA   0.2884  0.0166  0.2509  0.1783         NaN          NaN          NaN

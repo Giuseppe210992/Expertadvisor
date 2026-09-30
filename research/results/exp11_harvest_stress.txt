@@ -1,0 +1,26 @@
+                         net_pct  sharpe  max_dd  costi_esec         swap
+scenario                                                                 
+base                      0.0265  0.6124  0.0062 13,950.0362  -4,320.6388
+spread x2                 0.0209  0.4877  0.0066 20,400.2551  -4,301.2327
+spread x3                 0.0154  0.3623  0.0071 26,787.8869  -4,281.9961
+commissioni x2            0.0250  0.5785  0.0063 15,747.2078  -4,318.8998
+slippage x3               0.0170  0.3989  0.0069 24,947.8798  -4,286.5178
+swap x2                   0.0219  0.5061  0.0066 13,905.2211  -9,711.6091
+carry avverso +2%         0.0209  0.4844  0.0068 13,912.0447 -10,873.2153
+tutto peggiorato          0.0058  0.1386  0.0082 32,087.3180 -10,177.2150
+zero costi (solo lordo)   0.0431  0.9816  0.0052      0.0000   1,105.6426
+
+Regimi (HARVEST):
+    GFC 2008-09         : rendimento +0.57%  max DD 0.12%
+    Rally 2009-10       : rendimento +0.24%  max DD 0.19%
+    Crisi euro 2011     : rendimento -0.15%  max DD 0.28%
+    Laterale 2012-13    : rendimento +0.67%  max DD 0.35%
+    Trend USD 2014-15   : rendimento +0.40%  max DD 0.14%
+    Crash ago 2015      : rendimento -0.00%  max DD 0.06%
+    Q4 2018             : rendimento -0.04%  max DD 0.19%
+    Laterale 2019       : rendimento -0.00%  max DD 0.30%
+    COVID feb-mag 2020  : rendimento +0.16%  max DD 0.17%
+
+Rendimento per anno: 2006:+0.01% 2007:-0.13% 2008:+0.62% 2009:+0.13% 2010:+0.13% 2011:-0.20% 2012:+0.52% 2013:+0.15% 2014:-0.04% 2015:+0.12% 2016:+0.37% 2017:+0.34% 2018:+0.23% 2019:+0.01% 2020:+0.30%
+Massima serie negativa: 6 | stop con gap: 1 su 31, peggiore 0.06 R
+Uscite per motivo: {'day_tp_atr': 1725, 'stop': 28}

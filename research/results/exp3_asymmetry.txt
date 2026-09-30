@@ -1,0 +1,41 @@
+### Somme su 12 strumenti x 100k, 2005-2020.05
+               net_profit  gross_ov  net_ov  costs_exec    swap  swap_core  swap_ov  ov_net_core_long  ov_net_core_short  ov_n_core_long  ov_n_core_short  n_ov
+label                                                                                                                                                          
+core+ov_hedge      -4,879   -12,620 -20,329       8,629 -26,824    -24,112   -2,712           -17,289             -3,040             998              669  1667
+core+ov_net        -1,687   -12,630 -17,633       8,639 -23,662    -23,662        0           -15,143             -2,490             998              669  1667
+core_only          15,345         0       0       3,668 -24,334    -24,334        0                 0                  0               0                0     0
+opp120_alone       -2,897       890  -2,950       1,147  -2,694          0   -2,694            -6,236              3,285             266              154   420
+opp_alone         -20,591   -12,889 -20,546       4,961  -2,695          0   -2,695           -17,403             -3,143             998              669  1667
+same120_alone      -1,353    14,291  -1,353       5,100 -10,544          0  -10,544            -2,745              1,392            1281              642  1923
+same_alone            753    17,156     753      11,461  -4,943          0   -4,943            -3,966              4,718            2383             1288  3671
+
+### Per strumento: overlay opposto (H4 n20) split per direzione della principale
+           sym  ov_net_core_long  ov_n_core_long  ov_net_core_short  ov_n_core_short
+0      EUR_USD              -494              66                 55               79
+1      GBP_USD            -1,034              66             -1,089               89
+2      AUD_USD              -691              93                888               81
+3      USD_CAD            -2,789              62             -1,495               84
+4      EUR_JPY            -1,459              61                231               73
+5      AUD_JPY            -1,099              89                -94               55
+6      XAU_USD            -1,093              64                 34               33
+7   NAS100_USD            -2,159             119               -124               23
+8   SPX500_USD            -2,283             118               -272               24
+9    UK100_GBP            -2,632              83               -339               30
+10   JP225_USD                82              77             -1,668               49
+11   WTICO_USD            -1,753             100                730               49
+
+### Hedge vs netting (stessi segnali): differenza di swap
+            swap_hedge  swap_net  extra_cost_hedge  net_hedge  net_net
+sym                                                                   
+EUR_USD         -2,310    -2,030               281      1,656    1,938
+GBP_USD         -2,210    -1,901               309     -9,419   -9,124
+AUD_USD         -1,305      -993               311      5,236    5,559
+USD_CAD         -3,066    -2,792               274       -140      141
+EUR_JPY           -760      -557               204      2,624    2,831
+AUD_JPY          1,141     1,308               167     -1,172   -1,006
+XAU_USD         -3,402    -3,146               256      1,061    1,325
+NAS100_USD      -3,762    -3,484               277      2,550    2,841
+SPX500_USD      -3,530    -3,232               298      1,250    1,560
+UK100_GBP       -2,069    -1,773               297    -14,603  -14,330
+JP225_USD       -2,928    -2,672               256      2,715    2,969
+WTICO_USD       -2,622    -2,390               233      3,363    3,609
