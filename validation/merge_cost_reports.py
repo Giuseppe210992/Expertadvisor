@@ -19,7 +19,10 @@ ROWS = [("spread_avg_pts", "Spread medio (punti)"), ("spread_max_pts", "Spread m
         ("margin_min_lot_pct_capital", "Margine lotto min. in % capitale"),
         ("risk_min_lot_at_stop", "Rischio lotto min. allo stop C (4 ATR)"), ("risk_min_lot_pct_capital", "... in % del capitale"),
         ("cost_30d", "Costi attesi 30 giorni"), ("cost_60d", "Costi attesi 60 giorni"), ("cost_90d", "Costi attesi 90 giorni"),
-        ("cost_90d_pct_capital", "Costi 90 giorni in % capitale")]
+        ("cost_90d_pct_capital", "Costi 90 giorni in % capitale"),
+        ("capital_needed_risk_0_25pct", "Capitale minimo per rischio 0,25%/trade"),
+        ("capital_needed_risk_1pct", "Capitale minimo per rischio 1%/trade"),
+        ("capital_needed_risk_2pct", "Capitale minimo per rischio 2%/trade")]
 ACCOUNT = [("account_currency", "Valuta del conto"), ("hedging_account", "Conto hedging"),
            ("margin_call", "Margin call"), ("stop_out", "Stop-out"), ("stop_out_mode", "Unita' stop-out")]
 
@@ -43,10 +46,13 @@ def main(paths):
     summ = df.groupby("col").agg(costi_90g=("cost_90d", "sum"), costi_90g_pct=("cost_90d_pct_capital", "sum"),
                                  strumenti=("symbol", "count"),
                                  margine_oltre_capitale=("margin_min_lot_pct_capital", lambda x: int((x > 100).sum())),
-                                 rischio_oltre_50pct=("risk_min_lot_pct_capital", lambda x: int((x > 50).sum())))
+                                 rischio_oltre_50pct=("risk_min_lot_pct_capital", lambda x: int((x > 50).sum())),
+                                 capitale_min_025_max=("capital_needed_risk_0_25pct", "max"),
+                                 capitale_min_1_max=("capital_needed_risk_1pct", "max"))
     print(summ.to_markdown())
     print("\nNota: 'rischio_oltre_50pct' = strumenti su cui UNA posizione al lotto minimo con lo stop della variante C "
-          "rischia piu' di meta' del capitale indicato nello script.")
+          "rischia piu' di meta' del capitale indicato nello script. 'capitale_min_*_max' = capitale necessario perche' "
+          "TUTTI gli strumenti del report rispettino quel rischio con il lotto minimo.")
 
 
 if __name__ == "__main__":

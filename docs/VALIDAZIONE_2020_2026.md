@@ -1,6 +1,6 @@
 # Protocollo di validazione out-of-sample 2020-2026: variante C
 
-*Pre-registrazione. Questo documento viene scritto e committato **prima** di guardare qualsiasi risultato 2020-2026. Lo stato congelato è il commit **`f80349f44bfbf2c09ea372c90a7a64f78d143307`** (branch `claude/youthful-thompson-qvgmxl`). Il tag `variante-C-congelata` è stato creato solo in locale, perché da questo ambiente non era pubblicabile: si può crearlo su GitHub puntando a quel commit. Qualsiasi modifica successiva a strategia, parametri o criteri rende il test non valido e va dichiarata come nuova ricerca.*
+*Pre-registrazione. Questo documento viene scritto e committato **prima** di guardare qualsiasi risultato 2020-2026. Lo stato congelato è l'ultimo commit che modifica questo documento (vedi `git log -1 -- docs/VALIDAZIONE_2020_2026.md`). Dopo la prima versione (commit `f80349f`) sono state fatte, **prima di vedere qualsiasi dato 2020-2026**, solo correzioni che non cambiano le decisioni di trading del preset congelato: deposito del test (da 10.000 a 100.000, altrimenti i trade sarebbero saltati), prototipi di funzione, slippage e livelli SL/TP nel log, capitale necessario nel CostReport, range dell'input del preset da 50 €. Il tag `variante-C-congelata` va creato su quel commit.
 
 ## 1. Principi
 
@@ -10,16 +10,24 @@
 4. **Il 10% giornaliero resta solo un riferimento teorico**: l'input `InpReferenceTargetPct` è mostrato sul pannello ma non influenza nessuna decisione di trading. L'EA opera solo quando c'è un segnale con aspettativa positiva misurata e si ferma per i limiti di rischio. Non esiste alcun meccanismo che aumenti l'esposizione per "recuperare" il target.
 5. Se il test fallisce, la variante C si **abbandona**. Non si "aggiusta" guardando i risultati.
 
+## 1b. Obiettivo di rendimento
+
+Il 10% al giorno non è più un requisito: si accetta un rendimento inferiore purché sia **il più efficiente possibile**. In concreto:
+- **"Efficienza" = rendimento per unità di rischio** (Sharpe, rendimento/drawdown), non rendimento assoluto. Con una strategia data, il rendimento assoluto si alza solo alzando il rischio per trade, e il limite lo fissa il **caso peggiore**.
+- Per questo `analyze_mt5.py` calcola, per drawdown tollerati del 10%, 20% e 30% (99° percentile Monte Carlo), il **rischio massimo per trade** e il rendimento che ne deriva. È questo il numero da usare per scegliere il rischio **dopo** la validazione, non il 10% giornaliero.
+- **"In pochi mesi"** va distinto in due cose. (1) **Sapere se la strategia funziona**: in pochi mesi di conto reale non si può, perché la variante C fa ~115 trade l'anno sul portafoglio e per distinguere un vantaggio di +0,02 R dal caso ne servono ~550 (circa 5 anni). La risposta rapida viene dal backtest 2020-2026 su tick reali, che copre quasi 7 anni in poche ore. (2) **Guadagnare in pochi mesi**: dipende dal rischio scelto, ed è proprio lì che si nasconde la tentazione di una martingala mascherata. Il rischio si fissa una volta sola, dal drawdown tollerato, e non si alza per recuperare.
+
 ## 2. Cosa si testa
 
 | Elemento | Valore |
 |---|---|
 | Strategia | variante C (`docs/ANALISI_STRATEGIA_CTO.md`, sezioni 3 e 5.2) |
-| Parametri | `MQL5/Presets/CTO_VarianteC_congelata.set` (identici ai default dell'EA al commit `f80349f`) |
-| Periodo | 1 gennaio 2020 → 30 settembre 2026 |
+| Parametri | `MQL5/Presets/CTO_VarianteC_congelata.set` (identici ai default dell'EA nel commit congelato) |
+| Periodo valutato | 1 gennaio 2020 → 30 settembre 2026 |
+| Periodo del tester | **dal 1 gennaio 2019** (un anno di riscaldamento per EMA200 e ATR); l'analisi considera solo le posizioni aperte dal 2020 (`--start 2020-01-01`) |
 | Strumenti (un test per simbolo) | EURUSD, GBPUSD, USDJPY, XAUUSD, NAS100, SPX500 (US500), WTI (USOIL), con i nomi esatti del broker |
 | Dati | storico del broker scelto; modalità **"Ogni tick basato su tick reali"** |
-| Deposito di ogni test | 10.000 (valuta del conto). Serve a misurare il vantaggio con il dimensionamento per cui la strategia è stata progettata; l'effetto di un conto da 50 € si valuta a parte (sezione 6) |
+| Deposito di ogni test | **100.000** (valuta del conto, denaro virtuale del tester), leva **1:30**. Con 10.000 il lotto minimo di oro, indici, petrolio e perfino EURUSD rischierebbe più dello 0,25% previsto e l'EA **salterebbe i trade**: il test sarebbe vuoto o distorto. 100.000 corrisponde alle sleeve della ricerca. L'effetto di un conto da 50 € si valuta a parte (sezione 6) |
 | Ritardo di esecuzione | "casuale" nelle impostazioni del tester |
 | Commissioni | quelle reali del conto (inserite nel simbolo personalizzato o nelle impostazioni del tester se il broker non le applica nello storico) |
 | Swap | quelli del broker (verificare con `CTO_CostReport` che nel tester siano valorizzati) |
@@ -28,14 +36,17 @@ Nota: USDJPY non era nel dataset di ricerca, quindi è un test fuori campione an
 
 ## 3. Procedura
 
-1. `git checkout f80349f` (o il tag `variante-C-congelata`, se creato) e copia di `MQL5/` nella cartella dati del terminale; compilazione in MetaEditor (0 errori).
+1. checkout del commit congelato (o del tag `variante-C-congelata`, se creato) e copia di `MQL5/` nella cartella dati del terminale; compilazione in MetaEditor: 0 errori, e 0 warning oltre a eventuali "possible loss of data" su conversioni numeriche. Il codice usa `DEAL_SL`/`DEAL_TP` (proprietà dei deal presenti nelle build MT5 recenti): se il compilatore non le riconosce, aggiornare il terminale. Qualsiasi errore va corretto **senza cambiare la logica di trading**.
 2. Verifica visuale su 2-3 mesi di un simbolo: ingressi solo dopo la chiusura D1 e fuori rollover, presa di profitto giornaliera quando il movimento favorevole raggiunge 0,5 ATR, stop sul server a 4 ATR.
-3. Per ciascuno dei 7 simboli: Strategy Tester con il preset congelato, dal 2020-01-01 al 2026-09-30, deposito 10.000.
+3. Per ciascuno dei 7 simboli: Strategy Tester con il preset congelato, dal 2019-01-01 al 2026-09-30, deposito 100.000, leva 1:30.
+   **Controllo obbligatorio**: nel journal del tester non devono comparire righe "ingresso saltato: il lotto minimo rischierebbe…". Se compaiono, il deposito è troppo piccolo per quel simbolo: si alza il deposito (non il rischio) e si ripete il test di quel simbolo.
 4. Raccolta dei log da `Common\Files`: `CTO_trades_<simbolo>_710100_tester.csv` (e `CTO_daily_*.csv`). Il file del tester viene riscritto a ogni test: copiarlo dopo ogni simbolo.
 5. Analisi:
    ```bash
-   python validation/analyze_mt5.py --logs "logs/CTO_trades_*_tester.csv" --deposit 10000 \
-          --cost-mult 2 3 --risk-levels 0.25 1 5 25 50 --horizon-days 90 --split 2023-01-01 \
+   python validation/analyze_mt5.py --logs "logs/CTO_trades_*_tester.csv" --deposit 100000 \
+          --start 2020-01-01 --end 2026-09-30 --split 2023-01-01 \
+          --cost-mult 2 3 --risk-levels 0.25 1 5 25 50 --horizon-days 90 --max-dd 0.10 0.20 0.30 \
+          --expected EURUSD GBPUSD USDJPY XAUUSD NAS100 US500 USOIL \
           --out docs/risultati_validazione_2020_2026.md
    ```
 6. Commit del report **così com'è**, anche se negativo.

@@ -121,6 +121,15 @@ bool     g_pendDayTp = false;         // presa di profitto giornaliera in attesa
 datetime g_dayTpDay = 0;              // giornata D1 in cui e' scattata la presa di profitto
 datetime g_lastH1Bar = 0;
 
+//--- prototipi (alcune funzioni sono richiamate prima della loro definizione)
+void CloseVirtualLeg(const int i, const string why);
+void RecordLegR(const SVirtualLeg &l, const double netMoney);
+void CloseAllOverlays(const string why, const bool includeShadow);
+void CloseCore(const string why);
+void CloseEverything(const string why);
+void SyncNettingAfterCoreGone(const string why);
+void EnsureCoreStop(void);
+
 //+------------------------------------------------------------------+
 //| Posizione principale                                             |
 //+------------------------------------------------------------------+
@@ -199,6 +208,7 @@ void CloseVirtualLeg(const int i, const string why)
       if(!g_exec.Open(g_s.magicOv, l.dir > 0 ? -1 : 1, l.volume, 0.0, 0.0, "CTO OVx " + why, fi)) return;
       px = fi.filled;
       g_cost.OnFill(ROLE_OVERLAY, l.volume, fi.spreadAtFill, fi.slippage);
+      g_log.RememberFill(fi.deal, fi.requested, fi.slippage);
       cost = l.costAcc + fi.slippage * l.volume * vpu;   // commissioni reali registrate dai deal
       if(HistoryDealSelect(fi.deal)) cost -= HistoryDealGetDouble(fi.deal, DEAL_COMMISSION);
      }
@@ -241,7 +251,11 @@ void CloseAllOverlays(const string why, const bool includeShadow)
       if(PositionSelectByTicket(tk[i]))
         {
          double v = PositionGetDouble(POSITION_VOLUME);
-         if(g_exec.ClosePosition(tk[i], 0.0, fi)) g_cost.OnFill(ROLE_OVERLAY, v, fi.spreadAtFill, fi.slippage);
+         if(g_exec.ClosePosition(tk[i], 0.0, fi))
+           {
+            g_cost.OnFill(ROLE_OVERLAY, v, fi.spreadAtFill, fi.slippage);
+            g_log.RememberFill(fi.deal, fi.requested, fi.slippage);
+           }
         }
      }
    g_pendOv.active = false;
@@ -255,6 +269,7 @@ void CloseCore(const string why)
    if(g_exec.ClosePosition(t, 0.0, fi))
      {
       g_cost.OnFill(ROLE_CORE, v, fi.spreadAtFill, fi.slippage);
+      g_log.RememberFill(fi.deal, fi.requested, fi.slippage);
       PrintFormat("[CTO] principale chiusa (%s) @ %.5f", why, fi.filled);
      }
    // in netting la chiusura della posizione netta chiude implicitamente anche gli overlay reali
@@ -462,6 +477,7 @@ void TryExecuteCore(void)
    if(g_exec.Open(g_s.magicCore, g_pendCore.dir, lots, slp, 0.0, "CTO CORE", fi))
      {
       g_cost.OnFill(ROLE_CORE, lots, fi.spreadAtFill, fi.slippage);
+      g_log.RememberFill(fi.deal, fi.requested, fi.slippage);
       g_coreStop = g_sm.NormalizePrice(slp);
       PrintFormat("[CTO] principale %s %.2f lotti @ %.5f SL %.5f (spread %.1f pt, slippage %.1f pt)",
                   g_pendCore.dir > 0 ? "LONG" : "SHORT", lots, fi.filled, slp, fi.spreadAtFill / g_sm.Point(), fi.slippage / g_sm.Point());
@@ -579,6 +595,7 @@ void TryExecuteOverlay(void)
       SFillInfo fi;
       if(!g_exec.Open(g_s.magicOv, od, lots, 0.0, 0.0, "CTO OV net", fi)) return;
       g_cost.OnFill(ROLE_OVERLAY, lots, fi.spreadAtFill, fi.slippage);
+      g_log.RememberFill(fi.deal, fi.requested, fi.slippage);
       SVirtualLeg l;
       ZeroMemory(l);
       l.id = g_book.NewId(); l.dir = od; l.volume = lots; l.entry = fi.filled;
@@ -608,12 +625,14 @@ void TryExecuteOverlay(void)
       if(vA > 0.0 && g_exec.Open(g_s.magicOv, od, vA, slp, tpp, StringFormat("CTO OV#%I64dA", en.id), fa))
         {
          g_cost.OnFill(ROLE_OVERLAY, vA, fa.spreadAtFill, fa.slippage);
+         g_log.RememberFill(fa.deal, fa.requested, fa.slippage);
          if(HistoryDealSelect(fa.deal)) en.tickets[0] = (ulong)HistoryDealGetInteger(fa.deal, DEAL_POSITION_ID);
          en.openTickets++;
         }
       if(g_exec.Open(g_s.magicOv, od, vB, slp, 0.0, StringFormat("CTO OV#%I64dB", en.id), fb))
         {
          g_cost.OnFill(ROLE_OVERLAY, vB, fb.spreadAtFill, fb.slippage);
+         g_log.RememberFill(fb.deal, fb.requested, fb.slippage);
          if(HistoryDealSelect(fb.deal)) en.tickets[1] = (ulong)HistoryDealGetInteger(fb.deal, DEAL_POSITION_ID);
          en.openTickets++;
          en.entry = fb.filled;
@@ -673,7 +692,7 @@ int OnInit(void)
    //--- validazione (nessuna martingala: incrementi limitati e solo su overlay in profitto)
    if(PeriodSeconds(InpTfOv) >= PeriodSeconds(InpTfCore)) { Print("[CTO] il TF overlay deve essere inferiore al TF principale"); return INIT_PARAMETERS_INCORRECT; }
    if(InpCoreDayTpAtr < 0.0) { Print("[CTO] InpCoreDayTpAtr non puo' essere negativo"); return INIT_PARAMETERS_INCORRECT; }
-   if(InpMinLotMaxRiskPct < 0.0 || InpMinLotMaxRiskPct > 50.0) { Print("[CTO] InpMinLotMaxRiskPct fuori range (0-50%)"); return INIT_PARAMETERS_INCORRECT; }
+   if(InpMinLotMaxRiskPct < 0.0 || InpMinLotMaxRiskPct > 60.0) { Print("[CTO] InpMinLotMaxRiskPct fuori range (0-60%)"); return INIT_PARAMETERS_INCORRECT; }
    if(InpCoreRiskPct <= 0.0 || InpCoreRiskPct > 5.0) { Print("[CTO] rischio principale fuori range (0-5%)"); return INIT_PARAMETERS_INCORRECT; }
    if(InpMaxRatio <= 0.0 || InpMaxRatio > 1.5 || InpHStep <= 0.0 || InpHStep > InpMaxRatio) { Print("[CTO] parametri overlay non validi"); return INIT_PARAMETERS_INCORRECT; }
    if(InpKStop <= 0.0 || InpKTrail <= 0.0 || InpKOvStop <= 0.0) { Print("[CTO] stop non validi"); return INIT_PARAMETERS_INCORRECT; }

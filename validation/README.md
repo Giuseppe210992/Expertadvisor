@@ -10,6 +10,6 @@ Protocollo: [`docs/VALIDAZIONE_2020_2026.md`](../docs/VALIDAZIONE_2020_2026.md) 
 
 ```bash
 pip install pandas numpy tabulate
-python validation/analyze_mt5.py --logs "logs/CTO_trades_*_tester.csv" --deposit 10000 --out docs/risultati_validazione_2020_2026.md
+python validation/analyze_mt5.py --logs "logs/CTO_trades_*_tester.csv" --deposit 100000 --start 2020-01-01 --out docs/risultati_validazione_2020_2026.md
 python validation/merge_cost_reports.py "costi/CTO_cost_report_*.csv" > docs/confronto_broker.md
 ```

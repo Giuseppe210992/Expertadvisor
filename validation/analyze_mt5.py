@@ -38,7 +38,9 @@ def load(patterns):
     df = pd.concat([pd.read_csv(f, sep=";").assign(file=f) for f in files], ignore_index=True)
     df["time"] = pd.to_datetime(df["time"], format="%Y.%m.%d %H:%M:%S", errors="coerce")
     for c in ["volume", "price", "sl", "profit", "commission", "swap", "fee", "spread_price", "value_per_price_unit",
-              "balance", "equity"]:
+              "balance", "equity", "slippage_price"]:
+        if c not in df:
+            df[c] = 0.0                    # log di versioni precedenti dell'EA
         df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0.0)
     return df.sort_values("time")
 
@@ -56,14 +58,15 @@ def positions(df):
         vol = ins.volume.sum()
         risk = abs(i0.price - i0.sl) * vol * i0.value_per_price_unit if i0.sl > 0 else np.nan
         spread_cost = (0.5 * g.spread_price * g.volume * g.value_per_price_unit).sum()
+        slip_cost = (g.slippage_price * g.volume * g.value_per_price_unit).sum()   # > 0 = sfavorevole
         rows.append(dict(
             symbol=sym, position_id=pid, role=i0.role, dir=direction, t_in=i0.time, t_out=outs.time.max(),
             volume=vol, entry=i0.price, balance_in=i0.balance,
             profit=g.profit.sum(), commission=g.commission.sum(), swap=g.swap.sum(), fee=g.fee.sum(),
-            spread_cost=spread_cost, risk=risk, reasons=",".join(sorted(set(outs.reason)))))
+            spread_cost=spread_cost, slip_cost=slip_cost, risk=risk, reasons=",".join(sorted(set(outs.reason)))))
     p = pd.DataFrame(rows)
     p["net"] = p.profit + p.commission + p.swap + p.fee
-    p["gross"] = p.profit + p.spread_cost               # prima di spread, commissioni, swap
+    p["gross"] = p.profit + p.spread_cost + p.slip_cost  # prima di spread, slippage, commissioni, swap
     p["R"] = p.net / p.risk
     p["days"] = (p.t_out - p.t_in).dt.total_seconds() / 86400
     return p.sort_values("t_out").reset_index(drop=True)
@@ -71,7 +74,7 @@ def positions(df):
 
 def stress(p, cost_mult=1.0, swap_mult=1.0):
     q = p.copy()
-    extra = (cost_mult - 1.0) * (q.spread_cost + q.commission.abs() + q.fee.abs())
+    extra = (cost_mult - 1.0) * (q.spread_cost + q.slip_cost.clip(lower=0) + q.commission.abs() + q.fee.abs())
     q["net"] = q.net - extra + (swap_mult - 1.0) * q.swap.clip(upper=0)
     q["R"] = q.net / q.risk
     return q
@@ -97,8 +100,9 @@ def metrics(p, deposit):
     ret = daily / deposit
     R = p.R.dropna()
     t = R.mean() / (R.std(ddof=1) / math.sqrt(len(R))) if len(R) > 2 and R.std() > 0 else np.nan
-    return dict(trade=len(p), netto=p.net.sum(), netto_pct=p.net.sum() / deposit, lordo=p.gross.sum(),
-                spread=-p.spread_cost.sum(), commissioni=p.commission.sum(), swap=p.swap.sum(),
+    return dict(trade=len(p), lordo=p.gross.sum(), spread=-p.spread_cost.sum(), slippage=-p.slip_cost.sum(),
+                commissioni=p.commission.sum() + p.fee.sum(), swap=p.swap.sum(), netto=p.net.sum(),
+                netto_pct=p.net.sum() / deposit, expectancy=p.net.mean(), peggior_trade=p.net.min(),
                 win_rate=len(w) / len(p), pf=w.net.sum() / -l.net.sum() if l.net.sum() < 0 else np.inf,
                 payoff=(w.net.mean() / -l.net.mean()) if len(w) and len(l) else np.nan,
                 R_medio=R.mean(), t_R=t, durata_media_g=p.days.mean(),
@@ -136,6 +140,26 @@ def monte_carlo(R, n_trades, risk_levels, n_sims=10000):
     return pd.DataFrame(out)
 
 
+def max_risk_for_dd(R, n_trades, max_dd, pct=99, n_sims=4000):
+    """Massimo rischio per trade (%) tale che il DD al percentile 'pct' resti <= max_dd (bisezione)."""
+    R = np.asarray(pd.Series(R).dropna())
+    if len(R) < 10 or n_trades < 1:
+        return np.nan, np.nan
+    seq = block_bootstrap(R, n_trades, n_sims, rng=np.random.default_rng(11))
+    def stats_at(f):
+        eq = np.cumprod(np.maximum(1 + f * seq, 0.0), axis=1)
+        peak = np.maximum.accumulate(np.concatenate([np.ones((n_sims, 1)), eq], axis=1), axis=1)[:, 1:]
+        return np.percentile((1 - eq / peak).max(axis=1), pct), np.median(eq[:, -1] - 1)
+    lo, hi = 0.0, 1.0
+    for _ in range(30):
+        mid = (lo + hi) / 2
+        if stats_at(mid)[0] <= max_dd:
+            lo = mid
+        else:
+            hi = mid
+    return 100 * lo, stats_at(lo)[1]
+
+
 def fmt(df):
     return df.to_markdown(floatfmt=".4f")
 
@@ -148,17 +172,32 @@ def main():
     ap.add_argument("--risk-levels", type=float, nargs="+", default=[0.25, 1, 5, 25, 50])
     ap.add_argument("--horizon-days", type=int, default=90)
     ap.add_argument("--split", default="2023-01-01", help="data che divide l'OOS in due meta' (stabilita')")
+    ap.add_argument("--start", default=None, help="considera solo le posizioni aperte da questa data (warm-up escluso)")
+    ap.add_argument("--end", default=None)
+    ap.add_argument("--max-dd", type=float, nargs="+", default=[0.10, 0.20, 0.30],
+                    help="drawdown tollerati per il calcolo del rischio massimo per trade (99° percentile)")
+    ap.add_argument("--expected", nargs="*", default=[], help="simboli attesi: segnala quelli senza trade")
     ap.add_argument("--out", default="report_validazione.md")
     a = ap.parse_args()
 
     raw = load(a.logs)
     P = positions(raw)
+    if a.start:
+        P = P[P.t_in >= pd.Timestamp(a.start)].reset_index(drop=True)
+    if a.end:
+        P = P[P.t_in <= pd.Timestamp(a.end)].reset_index(drop=True)
+    if P.empty:
+        sys.exit("nessuna posizione chiusa nel periodo: controllare il journal ('ingresso saltato' = deposito troppo piccolo)")
     core = P[P.role == "CORE"]
     L = []
     L.append("# Report di validazione out-of-sample, variante C\n")
     L.append(f"Log: {len(set(raw.file))} file, {raw.symbol.nunique()} strumenti, periodo {P.t_in.min()} → {P.t_out.max()}, "
              f"{len(P)} posizioni chiuse ({len(core)} principale). Broker: {', '.join(sorted(set(raw.broker.astype(str))))}.\n")
 
+    missing = [x for x in a.expected if x not in set(P.symbol)]
+    if missing:
+        L.append(f"**ATTENZIONE: nessun trade su {', '.join(missing)}.** Se nel journal compare 'ingresso saltato', il deposito "
+                 "del test è troppo piccolo per il lotto minimo: il test di quel simbolo non è valido.\n")
     # 1. metriche
     per = {s: metrics(g, a.deposit) for s, g in P.groupby("symbol")}
     n_sym = len(per)
@@ -168,7 +207,12 @@ def main():
     L.append(fmt(pd.DataFrame(per).T))
     L.append("\n### Portafoglio (somma degli strumenti, deposito totale = %.0f)\n" % (a.deposit * n_sym))
     L.append(fmt(pd.DataFrame({"tutto": port, "solo principale": port_core})))
-    by_role = P.groupby("role")[["gross", "net", "commission", "swap", "spread_cost"]].sum()
+    L.append("\n### Risultato netto per anno\n")
+    yr = P.assign(anno=P.t_out.dt.year).pivot_table(index="anno", columns="symbol", values="net", aggfunc="sum", fill_value=0.0)
+    yr["PORTAFOGLIO"] = yr.sum(axis=1)
+    yr["PORTAFOGLIO %"] = yr["PORTAFOGLIO"] / (a.deposit * n_sym)
+    L.append(fmt(yr))
+    by_role = P.groupby("role")[["gross", "spread_cost", "slip_cost", "commission", "swap", "net"]].sum()
     L.append("\n### Principale vs overlay vs costi\n")
     L.append(fmt(by_role))
 
@@ -197,6 +241,13 @@ def main():
     L.append(fmt(monte_carlo(core.R, len(core), a.risk_levels)))
     L.append(f"\n### Orizzonte {a.horizon_days} giorni (~{n_h} trade sull'insieme degli strumenti testati)\n")
     L.append(fmt(monte_carlo(core.R, n_h, a.risk_levels)))
+    L.append("\n### Rischio massimo per trade compatibile con un drawdown tollerato (99° percentile, intero periodo)\n")
+    L.append("È la risposta alla domanda \"massima efficienza\": il rendimento si alza solo alzando il rischio, e il limite "
+             "lo fissa il caso peggiore, non la media.\n")
+    L.append("| DD tollerato (99° perc.) | Rischio max per trade | Rendimento mediano sul periodo |\n|---|---|---|")
+    for md in a.max_dd:
+        rk, med = max_risk_for_dd(core.R, len(core), md)
+        L.append(f"| {md:.0%} | {rk:.2f}% | {med:+.1%} |")
     L.append(f"\nPeggior serie negativa osservata: {port_core.get('serie_neg_max')} trade; peggior trade: {port_core.get('peggior_trade_R', np.nan):.2f} R")
 
     # 4. criteri

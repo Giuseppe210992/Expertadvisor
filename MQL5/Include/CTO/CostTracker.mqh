@@ -75,8 +75,8 @@ public:
    void              SampleSpread(const double grossExposureRatio)
      {
       int sp = m_sm.SpreadPoints();
-      m_spSum += sp; m_spN++; m_spMax = MathMax(m_spMax, sp);
-      m_daySpSum += sp; m_daySpN++; m_daySpMax = MathMax(m_daySpMax, sp);
+      m_spSum += sp; m_spN++; m_spMax = (int)MathMax(m_spMax, sp);
+      m_daySpSum += sp; m_daySpN++; m_daySpMax = (int)MathMax(m_daySpMax, sp);
       m_dayMaxGross = MathMax(m_dayMaxGross, grossExposureRatio);
      }
 

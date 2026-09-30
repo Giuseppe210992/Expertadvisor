@@ -17,6 +17,8 @@
 //|     (4 x ATR20 D1) in valuta e in % del capitale                 |
 //|   - costi attesi a 30/60/90 giorni con la frequenza della        |
 //|     variante C, in valuta e in % del capitale                    |
+//|   - capitale minimo perche' il lotto minimo rispetti un rischio  |
+//|     per trade dello 0,25% (variante C), 1% o 2%                  |
 //|  Output: Common\Files\CTO_cost_report_<server>.csv               |
 //|  Unire i file di piu' broker con validation/merge_cost_reports.py|
 //+------------------------------------------------------------------+
@@ -101,7 +103,8 @@ void OnStart(void)
              "swap_long_night_min_lot", "swap_short_night_min_lot", "swap_long_pct_yr", "swap_short_pct_yr",
              "hedge_cost_night_min_lot", "triple_swap_day",
              "atr20_d1", "roundtrip_pct_atr", "risk_min_lot_at_stop", "risk_min_lot_pct_capital",
-             "cost_30d", "cost_60d", "cost_90d", "cost_90d_pct_capital");
+             "cost_30d", "cost_60d", "cost_90d", "cost_90d_pct_capital",
+             "capital_needed_risk_0_25pct", "capital_needed_risk_1pct", "capital_needed_risk_2pct");
    for(int k = 0; k < n; k++)
      {
       string s = syms[k];
@@ -180,7 +183,9 @@ void OnStart(void)
                 DoubleToString(atrv > 0 ? rtPriceUnits / atrv * 100 : 0, 2),
                 DoubleToString(riskMin, 2), DoubleToString(InpCapital > 0 ? riskMin / InpCapital * 100 : 0, 1),
                 DoubleToString(monthly, 2), DoubleToString(2 * monthly, 2), DoubleToString(3 * monthly, 2),
-                DoubleToString(InpCapital > 0 ? 3 * monthly / InpCapital * 100 : 0, 1));
+                DoubleToString(InpCapital > 0 ? 3 * monthly / InpCapital * 100 : 0, 1),
+                // capitale minimo perche' il lotto minimo rispetti il rischio per trade indicato
+                DoubleToString(riskMin / 0.0025, 0), DoubleToString(riskMin / 0.01, 0), DoubleToString(riskMin / 0.02, 0));
       PrintFormat("%s: spread medio %.1f pt (max %.0f), A+C 0,01 lotti %.2f %s, swap L/S %.3f/%.3f per notte, "
                   "rischio lotto minimo allo stop %.2f %s (%.0f%% di %.0f), costi 90g %.2f %s",
                   s, avg, mx, rt, ccy, swL, swS, riskMin, ccy, InpCapital > 0 ? riskMin / InpCapital * 100 : 0, InpCapital, 3 * monthly, ccy);
