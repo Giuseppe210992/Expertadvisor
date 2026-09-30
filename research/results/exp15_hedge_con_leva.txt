@@ -1,0 +1,48 @@
+
+NAS100_USD 2005-01-02->2020-05-14
+  cala 5%/rimbalzo 3%, short 1x il long                 : long +456% short -218% totale +238% | coperture 82 (in utile 26) | drawdown max 46%
+  cala 5%/rimbalzo 3%, raddoppio a ogni copertura persa : long -25% short -75% totale -100% | coperture 27 (in utile 9) | drawdown max 100%  -> CONTO AZZERATO
+  cala 5%/rimbalzo 3%, short 2x il long                 : long +456% short -436% totale +20% | coperture 82 (in utile 26) | drawdown max 61%
+  cala 5%/rimbalzo 3%, short 3x il long                 : long +321% short -421% totale -100% | coperture 69 (in utile 20) | drawdown max 100%  -> CONTO AZZERATO
+  cala 5%/rimbalzo 3%, short 5x il long                 : long +14% short -114% totale -100% | coperture 38 (in utile 11) | drawdown max 100%  -> CONTO AZZERATO
+  cala 10%/rimbalzo 3%, short 1x il long                 : long +456% short -112% totale +344% | coperture 32 (in utile 7) | drawdown max 67%
+  cala 10%/rimbalzo 3%, raddoppio a ogni copertura persa : long -20% short -80% totale -100% | coperture 11 (in utile 3) | drawdown max 100%  -> CONTO AZZERATO
+  cala 10%/rimbalzo 3%, short 2x il long                 : long +456% short -225% totale +231% | coperture 32 (in utile 7) | drawdown max 82%
+  cala 10%/rimbalzo 3%, short 3x il long                 : long -28% short -72% totale -100% | coperture 15 (in utile 4) | drawdown max 100%  -> CONTO AZZERATO
+  cala 10%/rimbalzo 3%, short 5x il long                 : long -20% short -80% totale -100% | coperture 11 (in utile 3) | drawdown max 100%  -> CONTO AZZERATO
+
+SPX500_USD 2005-01-02->2020-05-14
+  cala 5%/rimbalzo 3%, short 1x il long                 : long +132% short -79% totale +53% | coperture 69 (in utile 20) | drawdown max 63%
+  cala 5%/rimbalzo 3%, raddoppio a ogni copertura persa : long -4% short -96% totale -100% | coperture 15 (in utile 3) | drawdown max 100%  -> CONTO AZZERATO
+  cala 5%/rimbalzo 3%, short 2x il long                 : long +132% short -159% totale -26% | coperture 69 (in utile 20) | drawdown max 92%
+  cala 5%/rimbalzo 3%, short 3x il long                 : long -32% short -68% totale -100% | coperture 26 (in utile 7) | drawdown max 100%  -> CONTO AZZERATO
+  cala 5%/rimbalzo 3%, short 5x il long                 : long +17% short -117% totale -100% | coperture 8 (in utile 1) | drawdown max 100%  -> CONTO AZZERATO
+  cala 10%/rimbalzo 3%, short 1x il long                 : long +132% short -46% totale +86% | coperture 27 (in utile 9) | drawdown max 66%
+  cala 10%/rimbalzo 3%, raddoppio a ogni copertura persa : long -25% short -75% totale -100% | coperture 9 (in utile 3) | drawdown max 100%  -> CONTO AZZERATO
+  cala 10%/rimbalzo 3%, short 2x il long                 : long +132% short -93% totale +40% | coperture 27 (in utile 9) | drawdown max 77%
+  cala 10%/rimbalzo 3%, short 3x il long                 : long +132% short -139% totale -7% | coperture 27 (in utile 9) | drawdown max 89%
+  cala 10%/rimbalzo 3%, short 5x il long                 : long -33% short -67% totale -100% | coperture 11 (in utile 4) | drawdown max 100%  -> CONTO AZZERATO
+
+XAU_USD 2006-03-19->2020-05-14
+  cala 5%/rimbalzo 3%, short 1x il long                 : long +210% short +28% totale +237% | coperture 61 (in utile 21) | drawdown max 34%
+  cala 5%/rimbalzo 3%, raddoppio a ogni copertura persa : long +21% short -121% totale -100% | coperture 8 (in utile 2) | drawdown max 100%  -> CONTO AZZERATO
+  cala 5%/rimbalzo 3%, short 2x il long                 : long +210% short +55% totale +265% | coperture 61 (in utile 21) | drawdown max 28%
+  cala 5%/rimbalzo 3%, short 3x il long                 : long +210% short +83% totale +292% | coperture 61 (in utile 21) | drawdown max 39%
+  cala 5%/rimbalzo 3%, short 5x il long                 : long +210% short +138% totale +347% | coperture 61 (in utile 21) | drawdown max 67%
+  cala 10%/rimbalzo 3%, short 1x il long                 : long +210% short +1% totale +211% | coperture 24 (in utile 8) | drawdown max 47%
+  cala 10%/rimbalzo 3%, raddoppio a ogni copertura persa : long +120% short -220% totale -100% | coperture 18 (in utile 6) | drawdown max 100%  -> CONTO AZZERATO
+  cala 10%/rimbalzo 3%, short 2x il long                 : long +210% short +2% totale +212% | coperture 24 (in utile 8) | drawdown max 49%
+  cala 10%/rimbalzo 3%, short 3x il long                 : long +210% short +3% totale +213% | coperture 24 (in utile 8) | drawdown max 54%
+  cala 10%/rimbalzo 3%, short 5x il long                 : long +210% short +5% totale +215% | coperture 24 (in utile 8) | drawdown max 65%
+
+EUR_USD 2005-01-02->2020-05-14
+  cala 5%/rimbalzo 3%, short 1x il long                 : long -20% short +40% totale +19% | coperture 22 (in utile 14) | drawdown max 15%
+  cala 5%/rimbalzo 3%, raddoppio a ogni copertura persa : long -20% short +311% totale +291% | coperture 22 (in utile 14) | drawdown max 31%
+  cala 5%/rimbalzo 3%, short 2x il long                 : long -20% short +79% totale +59% | coperture 22 (in utile 14) | drawdown max 17%
+  cala 5%/rimbalzo 3%, short 3x il long                 : long -20% short +119% totale +99% | coperture 22 (in utile 14) | drawdown max 19%
+  cala 5%/rimbalzo 3%, short 5x il long                 : long -20% short +198% totale +178% | coperture 22 (in utile 14) | drawdown max 24%
+  cala 10%/rimbalzo 3%, short 1x il long                 : long -20% short +8% totale -12% | coperture 11 (in utile 4) | drawdown max 27%
+  cala 10%/rimbalzo 3%, raddoppio a ogni copertura persa : long -6% short -94% totale -100% | coperture 9 (in utile 2) | drawdown max 100%  -> CONTO AZZERATO
+  cala 10%/rimbalzo 3%, short 2x il long                 : long -20% short +17% totale -4% | coperture 11 (in utile 4) | drawdown max 29%
+  cala 10%/rimbalzo 3%, short 3x il long                 : long -20% short +25% totale +4% | coperture 11 (in utile 4) | drawdown max 36%
+  cala 10%/rimbalzo 3%, short 5x il long                 : long -20% short +41% totale +21% | coperture 11 (in utile 4) | drawdown max 48%
