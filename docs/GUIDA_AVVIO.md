@@ -13,7 +13,7 @@ Obiettivo: eseguire la validazione 2020-2026 della variante C **senza denaro rea
    - `Experts/CTO` → dentro `MQL5/Experts`
    - `Include/CTO` → dentro `MQL5/Include`
    - `Scripts/CTO` → dentro `MQL5/Scripts`
-   - `Presets` → dentro `MQL5/Presets`
+   - `Presets` → dentro `MQL5/Presets` (**facoltativo**: se la cartella non esiste creala, oppure salta questo punto; i valori predefiniti dell'EA sono già la variante C congelata e il preset si può caricare nel tester da qualunque cartella con tasto destro → *Carica* nella scheda *Input*)
 3. In MT5, nel **Navigatore** (Ctrl+N): tasto destro → *Aggiorna*.
 
 (In alternativa per l'EA: il file unico `CoreTrendOverlay_single.mq5` incollato in un nuovo EA, come già fatto con `prova111`.)
