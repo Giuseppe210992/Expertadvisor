@@ -1,0 +1,53 @@
+"""
+Unisce i CSV prodotti da CTO_CostReport.mq5 su piu' broker (uno per server) in una tabella di confronto.
+
+Uso:  python merge_cost_reports.py CTO_cost_report_*.csv  > confronto_broker.md
+I file si trovano in  <Dati terminale>/../Common/Files/  (File > Apri cartella dati > risalire a Common).
+"""
+import sys, glob
+import pandas as pd
+
+ROWS = [("spread_avg_pts", "Spread medio (punti)"), ("spread_max_pts", "Spread massimo (punti)"),
+        ("worst_hour_server", "Ora con spread peggiore (server)"),
+        ("comm_per_lot_side", "Commissione per lotto per lato"), ("comm_source", "Fonte commissione"),
+        ("cost_open_min_lot", "Costo apertura lotto minimo"), ("cost_close_min_lot", "Costo chiusura lotto minimo"),
+        ("cost_roundtrip_min_lot", "Costo A+C lotto minimo"), ("roundtrip_pct_atr", "A+C in % ATR D1"),
+        ("swap_long_night_min_lot", "Swap LONG per notte (lotto min.)"), ("swap_short_night_min_lot", "Swap SHORT per notte (lotto min.)"),
+        ("swap_long_pct_yr", "Swap LONG %/anno"), ("swap_short_pct_yr", "Swap SHORT %/anno"),
+        ("hedge_cost_night_min_lot", "Costo hedge per notte (lotto min.)"), ("triple_swap_day", "Giorno swap triplo"),
+        ("min_lot", "Lotto minimo"), ("lot_step", "Step"), ("margin_min_lot", "Margine lotto minimo"),
+        ("margin_min_lot_pct_capital", "Margine lotto min. in % capitale"),
+        ("risk_min_lot_at_stop", "Rischio lotto min. allo stop C (4 ATR)"), ("risk_min_lot_pct_capital", "... in % del capitale"),
+        ("cost_30d", "Costi attesi 30 giorni"), ("cost_60d", "Costi attesi 60 giorni"), ("cost_90d", "Costi attesi 90 giorni"),
+        ("cost_90d_pct_capital", "Costi 90 giorni in % capitale")]
+ACCOUNT = [("account_currency", "Valuta del conto"), ("hedging_account", "Conto hedging"),
+           ("margin_call", "Margin call"), ("stop_out", "Stop-out"), ("stop_out_mode", "Unita' stop-out")]
+
+
+def main(paths):
+    files = [f for p in paths for f in glob.glob(p)]
+    if not files:
+        sys.exit("nessun file")
+    df = pd.concat([pd.read_csv(f, sep=";") for f in files], ignore_index=True)
+    df["col"] = df["broker"].astype(str) + " (" + df["server"].astype(str) + ")"
+    print("# Confronto broker (dati misurati da CTO_CostReport)\n")
+    acc = df.groupby("col").first()
+    print("## Conto\n")
+    print(pd.DataFrame({lab: acc[c] for c, lab in ACCOUNT}).T.to_markdown())
+    for sym, g in df.groupby("symbol"):
+        g = g.set_index("col")
+        print(f"\n## {sym}\n")
+        print(pd.DataFrame({lab: g[c] for c, lab in ROWS if c in g}).T.to_markdown())
+    # riepilogo: costi 90 giorni del portafoglio (somma degli strumenti) e strumenti non negoziabili con il capitale dato
+    print("\n## Riepilogo per broker\n")
+    summ = df.groupby("col").agg(costi_90g=("cost_90d", "sum"), costi_90g_pct=("cost_90d_pct_capital", "sum"),
+                                 strumenti=("symbol", "count"),
+                                 margine_oltre_capitale=("margin_min_lot_pct_capital", lambda x: int((x > 100).sum())),
+                                 rischio_oltre_50pct=("risk_min_lot_pct_capital", lambda x: int((x > 50).sum())))
+    print(summ.to_markdown())
+    print("\nNota: 'rischio_oltre_50pct' = strumenti su cui UNA posizione al lotto minimo con lo stop della variante C "
+          "rischia piu' di meta' del capitale indicato nello script.")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

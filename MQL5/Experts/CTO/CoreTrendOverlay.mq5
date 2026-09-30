@@ -29,6 +29,7 @@
 #include <CTO/CostTracker.mqh>
 #include <CTO/EdgeMonitor.mqh>
 #include <CTO/OverlayBook.mqh>
+#include <CTO/TradeLog.mqh>
 
 //=== input ===========================================================
 input group "=== Posizione principale (trend di lungo periodo) ==="
@@ -40,6 +41,7 @@ input int             InpAtrCore       = 20;        // ATR principale
 input double          InpKStop         = 4.0;       // Stop iniziale = k x ATR
 input double          InpKTrail        = 4.0;       // Chandelier = estremo chiusure - k x ATR
 input double          InpCoreRiskPct   = 0.25;      // Rischio per principale (% equity allo stop)
+input double          InpMinLotMaxRiskPct = 0.0;    // Conti piccoli: consenti il lotto minimo se il suo rischio <= % (0 = mai)
 input bool            InpAllowLong     = true;      // Principale LONG ammessa
 input bool            InpAllowShort    = true;      // Principale SHORT ammessa
 input double          InpCoreDayTpAtr  = 0.5;       // Presa di profitto giornaliera (x ATR D1; 0 = tenuta lunga)
@@ -84,6 +86,8 @@ input group "=== Identificazione e log ==="
 input long            InpMagic         = 710100;    // Magic principale (overlay = +1); unico per simbolo
 input bool            InpLogCsv        = true;      // Report giornaliero CSV (cartella Common\Files)
 input bool            InpDashboard     = true;      // Pannello a grafico
+input bool            InpTradeLog      = true;      // Log di ogni deal (CSV) per validation/analyze_mt5.py
+input double          InpReferenceTargetPct = 10.0; // Target TEORICO giornaliero (%): SOLO visualizzato, nessun effetto sul trading
 
 //=== stato globale =====================================================
 SCtoSettings   g_s;
@@ -96,6 +100,7 @@ CCtoRisk       g_risk;
 CCostTracker   g_cost;
 CEdgeMonitor   g_edge;
 COverlayBook   g_book;
+CTradeLog      g_log;
 bool           g_net = true;          // overlay come gambe virtuali (netting)
 datetime       g_lastCoreBar = 0, g_lastOvBar = 0;
 double         g_commPerLot = 0.0;    // commissione per lotto per lato osservata (per le gambe ombra)
@@ -430,7 +435,25 @@ void TryExecuteCore(void)
    //--- un nuovo ciclo chiude eventuali overlay residui del ciclo precedente
    if(AnyOverlayOpen()) CloseAllOverlays("new_core", true);
    double lots = g_risk.LotsForRisk(g_s.coreRiskPct, g_pendCore.stopDist);
-   if(lots <= 0.0) { Print("[CTO] lotti sotto il minimo per il rischio richiesto: ingresso saltato (nessun arrotondamento per eccesso)"); g_pendCore.active = false; return; }
+   if(lots <= 0.0)
+     {
+      //--- conto piccolo: il lotto minimo rischia piu' di InpCoreRiskPct. Lo si usa SOLO se l'utente
+      //    ha dichiarato un tetto esplicito e il rischio reale del lotto minimo lo rispetta.
+      double eqNow = AccountInfoDouble(ACCOUNT_EQUITY);
+      double minRiskPct = (eqNow > 0.0) ? g_pendCore.stopDist * g_sm.MinLot() * g_sm.ValuePerPriceUnit() / eqNow * 100.0 : 1e9;
+      if(InpMinLotMaxRiskPct > 0.0 && minRiskPct <= InpMinLotMaxRiskPct)
+        {
+         lots = g_sm.MinLot();
+         PrintFormat("[CTO] ATTENZIONE: lotto minimo con rischio reale %.1f%% dell'equity (richiesto %.2f%%)", minRiskPct, g_s.coreRiskPct);
+        }
+      else
+        {
+         PrintFormat("[CTO] ingresso saltato: il lotto minimo rischierebbe %.1f%% dell'equity (limite %.2f%%, tetto lotto minimo %.1f%%)",
+                     minRiskPct, g_s.coreRiskPct, InpMinLotMaxRiskPct);
+         g_pendCore.active = false;
+         return;
+        }
+     }
    string why;
    if(!g_risk.CanOpen(g_pendCore.dir, lots, g_pendCore.stopDist, true, why)) { PrintFormat("[CTO] ingresso principale rifiutato: %s", why); g_pendCore.active = false; return; }
    double px = (g_pendCore.dir > 0) ? g_sm.Ask() : g_sm.Bid();
@@ -612,8 +635,8 @@ void Dashboard(void)
    SRoleBook bc = g_cost.Book(ROLE_CORE), bo = g_cost.Book(ROLE_OVERLAY);
    string s = StringFormat("CTO %s | %s | modo overlay: %s%s\n", CTO_VERSION, _Symbol, g_net ? "NETTING" : "HEDGE",
                            g_risk.Halted() ? "  *** STOP OPERATIVO ***" : (g_risk.EntriesBlocked() ? "  [ingressi bloccati oggi]" : ""));
-   s += StringFormat("Equity inizio giorno %.2f | oggi %+.2f%% | DD giorno %.2f%% | DD dal massimo %.2f%%\n",
-                     g_risk.DayStartEquity(), g_risk.DayReturn() * 100, g_risk.DayDrawdown() * 100, g_risk.DrawdownFromPeak() * 100);
+   s += StringFormat("Equity inizio giorno %.2f | oggi %+.2f%% (target teorico %.1f%%: solo riferimento, non guida il trading) | DD giorno %.2f%% | DD dal massimo %.2f%%\n",
+                     g_risk.DayStartEquity(), g_risk.DayReturn() * 100, InpReferenceTargetPct, g_risk.DayDrawdown() * 100, g_risk.DrawdownFromPeak() * 100);
    s += hasCore ? StringFormat("Principale %s %.2f lotti @ %.5f  SL %.5f  (nominale %.2f) | modalita' %s\n", d > 0 ? "LONG" : "SHORT", v, e, sl,
                                CoreNominalVolume(v), InpCoreDayTpAtr > 0.0 ? StringFormat("harvest %.2f ATR", InpCoreDayTpAtr) : "tenuta lunga")
                 : "Principale: nessuna\n";
@@ -650,6 +673,7 @@ int OnInit(void)
    //--- validazione (nessuna martingala: incrementi limitati e solo su overlay in profitto)
    if(PeriodSeconds(InpTfOv) >= PeriodSeconds(InpTfCore)) { Print("[CTO] il TF overlay deve essere inferiore al TF principale"); return INIT_PARAMETERS_INCORRECT; }
    if(InpCoreDayTpAtr < 0.0) { Print("[CTO] InpCoreDayTpAtr non puo' essere negativo"); return INIT_PARAMETERS_INCORRECT; }
+   if(InpMinLotMaxRiskPct < 0.0 || InpMinLotMaxRiskPct > 50.0) { Print("[CTO] InpMinLotMaxRiskPct fuori range (0-50%)"); return INIT_PARAMETERS_INCORRECT; }
    if(InpCoreRiskPct <= 0.0 || InpCoreRiskPct > 5.0) { Print("[CTO] rischio principale fuori range (0-5%)"); return INIT_PARAMETERS_INCORRECT; }
    if(InpMaxRatio <= 0.0 || InpMaxRatio > 1.5 || InpHStep <= 0.0 || InpHStep > InpMaxRatio) { Print("[CTO] parametri overlay non validi"); return INIT_PARAMETERS_INCORRECT; }
    if(InpKStop <= 0.0 || InpKTrail <= 0.0 || InpKOvStop <= 0.0) { Print("[CTO] stop non validi"); return INIT_PARAMETERS_INCORRECT; }
@@ -670,6 +694,7 @@ int OnInit(void)
    g_cost.Init(GetPointer(g_sm), g_s, g_net);
    g_edge.Init(_Symbol, g_s.magicOv, g_s.edgeN, g_s.edgeMin);
    g_book.Init(_Symbol, g_s.magicOv);
+   g_log.Init(GetPointer(g_sm), g_s.magicCore, InpTradeLog);
    if(!g_net) g_book.Purge();
    g_pendCore.active = false;
    g_pendOv.active = false;
@@ -687,6 +712,7 @@ void OnDeinit(const int reason)
   {
    Print("[CTO] riepilogo costi e P&L:\n" + g_cost.Summary());
    g_cost.Deinit();
+   g_log.Deinit();
    g_ind.Release();
    Comment("");
   }
@@ -741,6 +767,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans, const MqlTradeRequest 
    long mg = HistoryDealGetInteger(trans.deal, DEAL_MAGIC);
    if(mg != g_s.magicCore && mg != g_s.magicOv) return;
    g_cost.OnDeal(trans.deal);
+   g_log.OnDeal(trans.deal);
    double vol = HistoryDealGetDouble(trans.deal, DEAL_VOLUME);
    double comm = HistoryDealGetDouble(trans.deal, DEAL_COMMISSION);
    if(vol > 0.0 && comm != 0.0) g_commPerLot = MathAbs(comm) / vol;

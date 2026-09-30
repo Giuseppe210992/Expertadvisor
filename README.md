@@ -14,12 +14,14 @@ indicato come la più solida, non all'idea originale (che nei test perde denaro 
 ## Struttura
 
 ```
-docs/        analisi completa, grafici
+docs/        analisi completa, grafici, protocollo di validazione 2020-2026 (VALIDAZIONE_2020_2026.md)
+validation/  analisi dei backtest MT5 (stress costi, Monte Carlo, criteri) e confronto broker
 research/    motore di backtest Python, esperimenti, risultati (riproducibili: research/run_all.sh)
 MQL5/
   Experts/CTO/CoreTrendOverlay.mq5    EA
   Include/CTO/*.mqh                   moduli (segnali, esecuzione, rischio, costi, edge monitor, registro overlay)
   Scripts/CTO/CTO_CostReport.mq5      misura dei costi reali sul proprio broker (da eseguire per primo)
+  Presets/                            variante C congelata; esperimento con capitale minimo (50 €)
 ```
 
 ## Avvertenze
