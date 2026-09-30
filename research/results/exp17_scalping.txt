@@ -1,0 +1,28 @@
+
+EUR_USD: costo per trade 1.32 pip (spread TenTrade 1.12 + slippage 0,2)
+  TP=SL= 3 pip casuale   : trade 203483  vinti 35.0%  lordo +0.003 R/trade  costo 0.440 R  NETTO -0.437 R/trade  -> su 1000 trade -437 R
+  TP=SL= 3 pip momentum  : trade 203483  vinti 33.4%  lordo -0.030 R/trade  costo 0.440 R  NETTO -0.470 R/trade  -> su 1000 trade -470 R
+  TP=SL= 3 pip contrarian: trade 203483  vinti 36.4%  lordo +0.030 R/trade  costo 0.440 R  NETTO -0.410 R/trade  -> su 1000 trade -410 R
+  TP=SL= 5 pip casuale   : trade 163516  vinti 42.3%  lordo -0.001 R/trade  costo 0.264 R  NETTO -0.265 R/trade  -> su 1000 trade -265 R
+  TP=SL= 5 pip momentum  : trade 163516  vinti 40.9%  lordo -0.027 R/trade  costo 0.264 R  NETTO -0.291 R/trade  -> su 1000 trade -291 R
+  TP=SL= 5 pip contrarian: trade 163516  vinti 43.7%  lordo +0.027 R/trade  costo 0.264 R  NETTO -0.237 R/trade  -> su 1000 trade -237 R
+  TP=SL=10 pip casuale   : trade  88076  vinti 47.8%  lordo -0.001 R/trade  costo 0.132 R  NETTO -0.133 R/trade  -> su 1000 trade -133 R
+  TP=SL=10 pip momentum  : trade  88076  vinti 47.1%  lordo -0.015 R/trade  costo 0.132 R  NETTO -0.147 R/trade  -> su 1000 trade -147 R
+  TP=SL=10 pip contrarian: trade  88076  vinti 48.6%  lordo +0.015 R/trade  costo 0.132 R  NETTO -0.117 R/trade  -> su 1000 trade -117 R
+  TP=SL=20 pip casuale   : trade  33898  vinti 49.8%  lordo +0.007 R/trade  costo 0.066 R  NETTO -0.059 R/trade  -> su 1000 trade -59 R
+  TP=SL=20 pip momentum  : trade  33898  vinti 50.2%  lordo +0.013 R/trade  costo 0.066 R  NETTO -0.053 R/trade  -> su 1000 trade -53 R
+  TP=SL=20 pip contrarian: trade  33898  vinti 48.8%  lordo -0.013 R/trade  costo 0.066 R  NETTO -0.079 R/trade  -> su 1000 trade -79 R
+
+XAU_USD: costo per trade 3.34 pip (spread TenTrade 3.14 + slippage 0,2)
+  TP=SL= 3 pip casuale   : trade 197474  vinti 26.9%  lordo +0.001 R/trade  costo 1.113 R  NETTO -1.112 R/trade  -> su 1000 trade -1112 R
+  TP=SL= 3 pip momentum  : trade 197474  vinti 25.7%  lordo -0.023 R/trade  costo 1.113 R  NETTO -1.137 R/trade  -> su 1000 trade -1137 R
+  TP=SL= 3 pip contrarian: trade 197474  vinti 28.0%  lordo +0.023 R/trade  costo 1.113 R  NETTO -1.090 R/trade  -> su 1000 trade -1090 R
+  TP=SL= 5 pip casuale   : trade 180272  vinti 35.6%  lordo -0.000 R/trade  costo 0.668 R  NETTO -0.668 R/trade  -> su 1000 trade -668 R
+  TP=SL= 5 pip momentum  : trade 180272  vinti 34.3%  lordo -0.027 R/trade  costo 0.668 R  NETTO -0.695 R/trade  -> su 1000 trade -695 R
+  TP=SL= 5 pip contrarian: trade 180272  vinti 36.9%  lordo +0.027 R/trade  costo 0.668 R  NETTO -0.641 R/trade  -> su 1000 trade -641 R
+  TP=SL=10 pip casuale   : trade 126029  vinti 44.0%  lordo -0.004 R/trade  costo 0.334 R  NETTO -0.338 R/trade  -> su 1000 trade -338 R
+  TP=SL=10 pip momentum  : trade 126029  vinti 42.7%  lordo -0.029 R/trade  costo 0.334 R  NETTO -0.363 R/trade  -> su 1000 trade -363 R
+  TP=SL=10 pip contrarian: trade 126029  vinti 45.6%  lordo +0.029 R/trade  costo 0.334 R  NETTO -0.305 R/trade  -> su 1000 trade -305 R
+  TP=SL=20 pip casuale   : trade  62993  vinti 48.1%  lordo -0.002 R/trade  costo 0.167 R  NETTO -0.169 R/trade  -> su 1000 trade -169 R
+  TP=SL=20 pip momentum  : trade  62993  vinti 47.1%  lordo -0.022 R/trade  costo 0.167 R  NETTO -0.189 R/trade  -> su 1000 trade -189 R
+  TP=SL=20 pip contrarian: trade  62993  vinti 49.3%  lordo +0.022 R/trade  costo 0.167 R  NETTO -0.145 R/trade  -> su 1000 trade -145 R
