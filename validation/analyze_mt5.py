@@ -19,6 +19,7 @@ I test in MT5 vanno fatti un simbolo alla volta, ciascuno con lo stesso deposito
 import argparse, glob, math, sys
 import numpy as np
 import pandas as pd
+from risk_curve import curve as risk_curve, to_markdown as risk_curve_md
 
 # ---------------------------------------------------------------- criteri pre-registrati (NON modificare dopo i test)
 CRITERI = {
@@ -202,6 +203,8 @@ def main():
     ap.add_argument("--expected", nargs="*", default=[], help="simboli attesi: segnala quelli senza trade")
     ap.add_argument("--events", nargs="*", default=None,
                     help="log eventi dell'EA (default: stessi file dei --logs con 'trades' -> 'events')")
+    ap.add_argument("--risk-curve", type=float, nargs="+", default=[0.25, 0.5, 1, 2, 5, 10, 20, 50],
+                    help="rischi per trade (%%) della curva rischio -> rendimento -> rovina (bootstrap a blocchi di mesi)")
     ap.add_argument("--out", default="report_validazione.md")
     a = ap.parse_args()
 
@@ -274,6 +277,12 @@ def main():
         rk, med = max_risk_for_dd(core.R, len(core), md)
         L.append(f"| {md:.0%} | {rk:.2f}% | {med:+.1%} |")
     L.append(f"\nPeggior serie negativa osservata: {port_core.get('serie_neg_max')} trade; peggior trade: {port_core.get('peggior_trade_R', np.nan):.2f} R")
+
+    # 3a. curva rischio -> rendimento -> rovina (strategia invariata, cambia solo il rischio per trade)
+    L.append("\n## 3a. Curva rischio → rendimento → rovina (bootstrap a blocchi di 3 mesi, 3/6/12 mesi e intero periodo)\n")
+    L.append("Trade trattati in sequenza per data di chiusura: ai rischi alti la perdita simultanea di più posizioni è "
+             "sottostimata. Rovina = perdita del 90% in un qualsiasi momento.\n")
+    L.append(risk_curve_md(risk_curve(P[["t_out", "R"]].dropna(), risks=a.risk_curve)))
 
     # 3b. motivi degli ingressi (eventi)
     ev_pat = a.events if a.events is not None else [x.replace("CTO_trades_", "CTO_events_") for x in a.logs]

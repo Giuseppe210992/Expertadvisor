@@ -6,7 +6,8 @@ Metodi:
   M1 bold play ESMA (leva 1:30): una posizione 0,01 lotti (il massimo consentito dal margine) nella
      direzione del trend D1 (EMA50/EMA200), tenuta fino a raddoppio (100 EUR) o stop-out (livello di margine 50%)
   M2 come M1 ma direzione opposta al trend (serve a vedere se il trend aiuta; la media M1/M2 = direzione casuale)
-  M3 bold play leva 1:500 (broker non UE): 0,05 lotti nella direzione del trend
+  M3 bold play leva 1:500 (non disponibile ai clienti retail tramite entita' UE, limite ESMA 1:30; tutele e vigilanza
+     dipendono dall'entita' giuridica del conto e vanno verificate broker per broker): 0,05 lotti nel trend
   M4 griglia martingala leva 1:500 (tipico EA "raddoppia conto"): 0,01 lotti nel trend, raddoppio del lotto
      ogni 20 pip contro, chiusura del cesto a +1 USD, ripartenza, fino a raddoppio o stop-out
   (con leva 1:30 la martingala non e' eseguibile: il secondo livello richiede 117 USD di margine su 58,5)
