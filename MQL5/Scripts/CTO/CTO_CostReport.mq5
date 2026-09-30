@@ -34,6 +34,7 @@ input double InpCommPerLotSide = -1.0;  // Commissione per lotto per lato se non
 input double InpStopAtr        = 4.0;   // Stop della variante C (x ATR20 D1)
 input double InpTradesPerMonth = 0.8;   // Round-trip al mese per strumento (variante C nei test: ~9,5/anno)
 input double InpNightsPerMonth = 2.3;   // Notti in posizione al mese (variante C: in mercato ~7,7% del tempo)
+input bool   InpFindSymbols    = true;  // Elenca nel Diario i nomi del broker per indici, petrolio e oro
 
 //--- commissione per lotto per lato osservata nei deal del conto
 double ObservedCommissionPerLot(const string sym)
@@ -83,8 +84,48 @@ string Sanitize(string s)
    return s;
   }
 
+//--- nome leggibile della modalita' di trading
+string TradeModeText(const long m)
+  {
+   switch((int)m)
+     {
+      case SYMBOL_TRADE_MODE_FULL:      return "ACCESSO COMPLETO";
+      case SYMBOL_TRADE_MODE_DISABLED:  return "disabilitato";
+      case SYMBOL_TRADE_MODE_CLOSEONLY: return "solo chiusura";
+      case SYMBOL_TRADE_MODE_LONGONLY:  return "solo long";
+      case SYMBOL_TRADE_MODE_SHORTONLY: return "solo short";
+     }
+   return "sconosciuta";
+  }
+
+//--- elenca tutti i simboli del server il cui nome o descrizione contiene una parola chiave
+//    (serve a trovare i nomi esatti di Nasdaq 100, S&P 500, WTI e oro, che cambiano da broker a broker)
+void FindCandidateSymbols(void)
+  {
+   string keys[] = {"NAS", "TEC", "NDX", "US100", "US500", "SPX", "SP500", "S&P", "500",
+                    "WTI", "XTI", "OIL", "CRUDE", "BRENT", "XBR", "XAU", "GOLD"};
+   int total = SymbolsTotal(false), found = 0;
+   PrintFormat("---- Ricerca simboli su %s (%d simboli in totale) ----", AccountInfoString(ACCOUNT_SERVER), total);
+   for(int i = 0; i < total; i++)
+     {
+      string name = SymbolName(i, false);
+      string desc = SymbolInfoString(name, SYMBOL_DESCRIPTION);
+      string up = name + " " + desc;
+      StringToUpper(up);
+      bool hit = false;
+      for(int k = 0; k < ArraySize(keys) && !hit; k++) hit = (StringFind(up, keys[k]) >= 0);
+      if(!hit) continue;
+      found++;
+      PrintFormat("TROVATO: \"%s\"  | %s | trading: %s | contratto %.2f | lotto min %.2f",
+                  name, desc, TradeModeText(SymbolInfoInteger(name, SYMBOL_TRADE_MODE)),
+                  SymbolInfoDouble(name, SYMBOL_TRADE_CONTRACT_SIZE), SymbolInfoDouble(name, SYMBOL_VOLUME_MIN));
+     }
+   PrintFormat("---- %d simboli candidati. Usa in InpSymbols SOLO quelli con trading: ACCESSO COMPLETO ----", found);
+  }
+
 void OnStart(void)
   {
+   if(InpFindSymbols) FindCandidateSymbols();
    string syms[];
    int n = StringSplit(InpSymbols, ',', syms);
    string server = AccountInfoString(ACCOUNT_SERVER);
@@ -109,7 +150,7 @@ void OnStart(void)
      {
       string s = syms[k];
       StringTrimLeft(s); StringTrimRight(s);
-      if(!SymbolSelect(s, true)) { PrintFormat("%s: simbolo non trovato su %s", s, server); continue; }
+      if(!SymbolSelect(s, true)) { PrintFormat("%s: simbolo non trovato su %s (vedi l'elenco TROVATO sopra per il nome esatto)", s, server); continue; }
       double pt = SymbolInfoDouble(s, SYMBOL_POINT);
       double vpu = ValuePerPriceUnit(s);
       double minLot = SymbolInfoDouble(s, SYMBOL_VOLUME_MIN);
