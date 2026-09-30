@@ -41,7 +41,7 @@ python download_data.py EUR_USD GBP_USD AUD_USD USD_CAD EUR_JPY AUD_JPY XAU_USD 
 
 1. **R-multipli per record invece che per ingresso**: con il take-profit parziale un ingresso vincente
    produce due record, ciascuno con il proprio R pieno, quindi i vincenti venivano contati due volte
-   (l'overlay originale sembrava a +0,13 R con t=+4; per ingresso è −0,12 R con t=−4). Corretto sia nel motore
+   (l'overlay originale sembrava a +0,13 R con t=+4; per ingresso è −0,105 R con t=−4,07). Corretto sia nel motore
    sia nell'edge monitor dell'EA.
 2. **Costi FX sovrastimati ed esecuzione nel rollover**: spread FX major inseriti 10 volte più alti
    (1,5 pip invece di 0,15 pip su EURUSD ECN) e ordini della principale eseguiti alle 22:00 UTC con spread
