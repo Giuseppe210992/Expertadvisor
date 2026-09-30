@@ -1,0 +1,13 @@
+Partenze: 167 (una al mese, 2006-2019)
+
+                                           metodo orizzonte  P_raddoppio  P_rovina  P_in_corso  capitale_finale_medio  capitale_finale_mediano  P_sotto_25  giorni_mediani_al_raddoppio
+0             M1 ESMA 1:30, 0,01 lotti, nel trend    3 mesi        0.257     0.449       0.293                 51.659                   41.710       0.449                       52.000
+1             M1 ESMA 1:30, 0,01 lotti, nel trend    6 mesi        0.305     0.515       0.180                 51.870                   21.774       0.515                       55.000
+2       M2 ESMA 1:30, 0,01 lotti, contro il trend    3 mesi        0.251     0.443       0.305                 49.634                   36.843       0.455                       38.500
+3       M2 ESMA 1:30, 0,01 lotti, contro il trend    6 mesi        0.347     0.605       0.048                 48.692                   19.994       0.611                       59.000
+4            M3 leva 1:500, 0,05 lotti, nel trend    3 mesi        0.479     0.521       0.000                 50.706                    6.600       0.521                        2.000
+5            M3 leva 1:500, 0,05 lotti, nel trend    6 mesi        0.479     0.521       0.000                 50.706                    6.600       0.521                        2.000
+6  M4 martingala 1:500 (griglia 20 pip, lotto x2)    3 mesi        0.341     0.659       0.000                 41.354                   12.526       0.659                        4.000
+7  M4 martingala 1:500 (griglia 20 pip, lotto x2)    6 mesi        0.341     0.659       0.000                 41.354                   12.526       0.659                        4.000
+8                M5 variante C, 0,01 lotti (ESMA)    3 mesi        0.000     0.134       0.866                 50.276                   51.331       0.010                          NaN
+9                M5 variante C, 0,01 lotti (ESMA)    6 mesi        0.000     0.229       0.771                 50.483                   52.268       0.022                          NaN

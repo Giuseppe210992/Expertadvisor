@@ -14,6 +14,7 @@ python3 exp8_daily_target_check.py > results/exp8_daily_target_check.txt
 python3 exp9_short_hold.py        > results/exp9_short_hold.txt
 python3 exp10_harvest.py          > results/exp10_harvest.txt
 python3 exp11_harvest_stress.py   > results/exp11_harvest_stress.txt
+python3 exp12_double_50.py        > results/exp12_double_50.txt
 python3 instrument_profile.py     > /dev/null
 python3 make_charts.py
 python3 cost_table.py             > /dev/null
