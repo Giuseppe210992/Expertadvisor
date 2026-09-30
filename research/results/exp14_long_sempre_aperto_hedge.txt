@@ -1,0 +1,44 @@
+
+NAS100_USD 2005-01-02->2020-05-14 buy&hold +456%
+  cala 3% -> short; chiude se rimbalza 2%: short -212% (166 coperture, 50 in utile) totale +244%
+  cala 3% -> short; chiude se rimbalza 3%: short -244% (142 coperture, 46 in utile) totale +212%
+  cala 3% -> short; chiude se rimbalza 5%: short -365% (108 coperture, 33 in utile) totale +91%
+  cala 5% -> short; chiude se rimbalza 2%: short -194% (89 coperture, 27 in utile) totale +262%
+  cala 5% -> short; chiude se rimbalza 3%: short -218% (82 coperture, 26 in utile) totale +238%
+  cala 5% -> short; chiude se rimbalza 5%: short -304% (71 coperture, 20 in utile) totale +152%
+  cala 10% -> short; chiude se rimbalza 2%: short -115% (33 coperture, 5 in utile) totale +341%
+  cala 10% -> short; chiude se rimbalza 3%: short -112% (32 coperture, 7 in utile) totale +344%
+  cala 10% -> short; chiude se rimbalza 5%: short -184% (31 coperture, 7 in utile) totale +272%
+
+SPX500_USD 2005-01-02->2020-05-14 buy&hold +132%
+  cala 3% -> short; chiude se rimbalza 2%: short -98% (141 coperture, 39 in utile) totale +35%
+  cala 3% -> short; chiude se rimbalza 3%: short -107% (122 coperture, 37 in utile) totale +26%
+  cala 3% -> short; chiude se rimbalza 5%: short -158% (91 coperture, 25 in utile) totale -25%
+  cala 5% -> short; chiude se rimbalza 2%: short -53% (71 coperture, 20 in utile) totale +80%
+  cala 5% -> short; chiude se rimbalza 3%: short -79% (69 coperture, 20 in utile) totale +53%
+  cala 5% -> short; chiude se rimbalza 5%: short -141% (58 coperture, 14 in utile) totale -9%
+  cala 10% -> short; chiude se rimbalza 2%: short -32% (27 coperture, 9 in utile) totale +101%
+  cala 10% -> short; chiude se rimbalza 3%: short -46% (27 coperture, 9 in utile) totale +86%
+  cala 10% -> short; chiude se rimbalza 5%: short -79% (25 coperture, 8 in utile) totale +53%
+
+XAU_USD 2006-03-19->2020-05-14 buy&hold +210%
+  cala 3% -> short; chiude se rimbalza 2%: short -62% (132 coperture, 47 in utile) totale +147%
+  cala 3% -> short; chiude se rimbalza 3%: short +10% (102 coperture, 43 in utile) totale +220%
+  cala 3% -> short; chiude se rimbalza 5%: short -133% (80 coperture, 24 in utile) totale +77%
+  cala 5% -> short; chiude se rimbalza 2%: short -3% (68 coperture, 26 in utile) totale +206%
+  cala 5% -> short; chiude se rimbalza 3%: short +28% (61 coperture, 21 in utile) totale +237%
+  cala 5% -> short; chiude se rimbalza 5%: short -34% (51 coperture, 18 in utile) totale +176%
+  cala 10% -> short; chiude se rimbalza 2%: short -24% (26 coperture, 7 in utile) totale +186%
+  cala 10% -> short; chiude se rimbalza 3%: short +1% (24 coperture, 8 in utile) totale +211%
+  cala 10% -> short; chiude se rimbalza 5%: short -80% (23 coperture, 5 in utile) totale +130%
+
+EUR_USD 2005-01-02->2020-05-14 buy&hold -20%
+  cala 3% -> short; chiude se rimbalza 2%: short -1% (67 coperture, 18 in utile) totale -21%
+  cala 3% -> short; chiude se rimbalza 3%: short +24% (45 coperture, 16 in utile) totale +4%
+  cala 3% -> short; chiude se rimbalza 5%: short +15% (28 coperture, 12 in utile) totale -6%
+  cala 5% -> short; chiude se rimbalza 2%: short +20% (29 coperture, 14 in utile) totale -1%
+  cala 5% -> short; chiude se rimbalza 3%: short +40% (22 coperture, 14 in utile) totale +19%
+  cala 5% -> short; chiude se rimbalza 5%: short +17% (19 coperture, 10 in utile) totale -3%
+  cala 10% -> short; chiude se rimbalza 2%: short -16% (13 coperture, 2 in utile) totale -36%
+  cala 10% -> short; chiude se rimbalza 3%: short +8% (11 coperture, 4 in utile) totale -12%
+  cala 10% -> short; chiude se rimbalza 5%: short -15% (11 coperture, 2 in utile) totale -36%
