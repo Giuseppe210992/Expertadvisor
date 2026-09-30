@@ -14,7 +14,7 @@ se la strategia "posizione principale + operazioni opposte" ha un vantaggio stat
 ```bash
 pip install numpy pandas scipy matplotlib requests tabulate
 python download_data.py EUR_USD GBP_USD AUD_USD USD_CAD EUR_JPY AUD_JPY XAU_USD NAS100_USD SPX500_USD UK100_GBP JP225_USD WTICO_USD
-./run_all.sh     # ~25 minuti su 4 core; scrive results/ e docs/img/
+./run_all.sh     # ~35 minuti su 4 core; scrive results/ e docs/img/
 ```
 
 ## File
@@ -31,7 +31,11 @@ python download_data.py EUR_USD GBP_USD AUD_USD USD_CAD EUR_JPY AUD_JPY XAU_USD 
 | `exp5_final.py` | Batteria finale: metriche, test t per ingresso, ipotesi nulla (ingressi casuali), livelli di rischio, stress dei costi, regimi, target giornaliero, walk-forward, Monte Carlo |
 | `exp6_risk_sizing.py` | Overlay a rischio costante (ipotesi respinta) |
 | `exp7_futures_costs.py` | Stessa strategia con struttura di costo "futures" |
-| `make_charts.py`, `cost_table.py` | Grafici e tabella dei costi del report |
+| `exp8_daily_target_check.py` | Il "chiudi tutto al target giornaliero" è un artefatto? (periodi, tempo in mercato, swap) |
+| `exp9_short_hold.py` | Uscite a tempo vs presa di profitto giornaliera in ATR, stress dei costi |
+| `exp10_harvest.py`, `exp11_harvest_stress.py` | Variante C: livelli di rischio, metriche per strumento, test t, stress completo, regimi |
+| `instrument_profile.py` | Volatilità, variance ratio, efficiency ratio, gap del lunedì per strumento |
+| `make_charts.py`, `cost_table.py`, `cost_table2.py` | Grafici e tabelle dei costi del report |
 
 ## Due errori trovati e corretti durante la ricerca (per trasparenza)
 

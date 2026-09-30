@@ -75,7 +75,7 @@ input double          InpMaxHeatPct    = 6.0;       // Rischio aperto massimo di
 input double          InpMaxGrossLev   = 5.0;       // Nozionale lordo massimo / equity
 input double          InpMinMarginLvl  = 500.0;     // Livello di margine minimo dopo un ingresso (%)
 input double          InpDailyLossPct  = 3.0;       // Perdita giornaliera massima (%): blocca + chiude overlay
-input double          InpHaltDDPct     = 25.0;      // Stop operativo EA: drawdown dal massimo (%)
+input double          InpHaltDDPct     = 15.0;      // Stop operativo EA: drawdown dal massimo (%)
 input double          InpDailyTargetPct= 0.0;       // Target giornaliero (%) (0 = off; vedi ricerca)
 input ENUM_TARGET_MODE InpTargetMode   = TGT_OFF;   // Azione al target giornaliero
 input bool            InpResetHalt     = false;     // Reset manuale dello stop operativo
@@ -257,6 +257,23 @@ void CloseCore(const string why)
    else if(!g_s.ovAfterCoreExit) CloseAllOverlays("core_exit", true);
   }
 
+//--- chiude tutto sul simbolo con il minimo di esecuzioni:
+//    in netting basta chiudere la posizione netta (le gambe virtuali si chiudono contabilmente allo stesso prezzo);
+//    in hedging si chiudono prima gli overlay e poi la principale
+void CloseEverything(const string why)
+  {
+   if(g_net)
+     {
+      CloseCore(why);
+      SyncNettingAfterCoreGone(why);
+     }
+   else
+     {
+      CloseAllOverlays(why, true);
+      CloseCore(why);
+     }
+  }
+
 //--- netting: se la posizione netta non esiste piu', le gambe virtuali reali sono state chiuse con essa
 void SyncNettingAfterCoreGone(const string why)
   {
@@ -392,8 +409,7 @@ void TryExecuteCore(void)
   {
    if(g_pendDayTp && !g_exec.InRollover())
      {
-      CloseAllOverlays("day_tp", true);
-      CloseCore("day_tp");
+      CloseEverything("day_tp");
       ulong t1; int d1; double v1, e1, s1; datetime o1;
       if(!GetCore(t1, d1, v1, e1, s1, o1)) g_pendDayTp = false;
       return;
@@ -465,6 +481,7 @@ void OnNewOvBar(void)
    double coreNom = CoreNominalVolume(v);
    double ovVol = OverlayVolumeReal() + g_book.VirtualVolume(true);
    if(ovVol >= g_s.maxRatio * coreNom - g_sm.MinLot() * 0.5) return;
+   if(g_net && v - g_sm.MinLot() < g_sm.MinLot() * 0.5) return;   // netting: la posizione netta non deve azzerarsi
 
    bool go = false;
    bool followShadow = false, hasOpen = false;
@@ -502,6 +519,9 @@ void TryExecuteOverlay(void)
    if(!GetCore(t, d, v, e, sl, ot)) { g_pendOv.active = false; return; }
    double coreNom = CoreNominalVolume(v);
    double room = g_s.maxRatio * coreNom - (OverlayVolumeReal() + g_book.VirtualVolume(true));
+   //--- netting: una riduzione pari al 100% azzererebbe la posizione netta (MT5 la chiuderebbe);
+   //    resta sempre almeno un lotto minimo di esposizione nella direzione della principale
+   if(g_net && !g_pendOv.shadow) room = MathMin(room, v - g_sm.MinLot());
    double lots = g_sm.NormalizeLotsDown(MathMin(g_s.hStep * coreNom, room));
    if(lots <= 0.0) { g_pendOv.active = false; return; }
    int od = g_pendOv.dir;
@@ -682,7 +702,7 @@ void OnTick(void)
    g_cost.SampleSpread(eq > 0.0 ? g_risk.GrossNotional() / eq : 0.0);
    bool closeOv, closeAll;
    g_risk.Evaluate(closeOv, closeAll);
-   if(closeAll) { CloseAllOverlays("risk", true); CloseCore("risk"); }
+   if(closeAll) CloseEverything("risk");
    else if(closeOv) CloseAllOverlays("daily", false);
 
    //--- 2. la principale e' stata chiusa dallo stop sul server?
