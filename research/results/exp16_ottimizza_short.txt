@@ -1,0 +1,12 @@
+NAS100_USD: 280 combinazioni provate sul 2005-2012, 0 con coperture in utile
+   migliore 2005-2012: calo 5%, rimbalzo 3%, short 1x -> coperture -16%, DD 46%
+   stessa regola 2013-2020:                          -> coperture -119%, DD 32%  (solo long +229%, totale +109%)
+SPX500_USD: 280 combinazioni provate sul 2005-2012, 4 con coperture in utile
+   migliore 2005-2012: calo 12%, rimbalzo 10%, short 5x -> coperture +8%, DD 74%
+   stessa regola 2013-2020:                          -> coperture +47%, DD 97%  (solo long +93%, totale +140%)
+XAU_USD: 280 combinazioni provate sul 2005-2012, 12 con coperture in utile
+   migliore 2005-2012: calo 10%, rimbalzo 2%, short 5x -> coperture +37%, DD 40%
+   stessa regola 2013-2020:                          -> coperture -12%, DD 75%  (solo long +2%, totale -10%)
+EUR_USD: 280 combinazioni provate sul 2005-2012, 168 con coperture in utile
+   migliore 2005-2012: calo 4%, rimbalzo 3%, short 5x -> coperture +152%, DD 22%
+   stessa regola 2013-2020:                          -> coperture +59%, DD 25%  (solo long -18%, totale +41%)
