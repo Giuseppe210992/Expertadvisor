@@ -141,6 +141,32 @@ Conseguenze:
 - In alternativa, verificare se il broker offre conti **cent** o micro-lotti (0,001): riducono il rischio per trade di 10-100 volte e rendono l'esperimento più simile alla strategia testata.
 - Per eseguire la variante C come progettata (portafoglio di 7 strumenti a 0,25% per trade) servono indicativamente **almeno 10.000**; per il solo forex con rischio ≤ 2% per trade, **almeno 1.500-2.000**.
 
+## 6b. Scelta del rischio per trade (regola pre-registrata, calcolata da `analyze_mt5.py`, sezione 3c)
+
+La curva rischio → rendimento → rovina 2005-2020 (`research/results/exp13*.txt`) è **solo esplorativa**: è in-sample, e i livelli che suggerisce (ad esempio il 5% per trade) **non** sono "ottimali" né "controllati" finché il vantaggio non è dimostrato fuori campione. Il rischio operativo si sceglie **solo** con questa regola, applicata ai trade 2020-2026:
+
+1. **Prerequisito**: il vantaggio dell'insieme di strumenti considerato deve superare il criterio 2 (R medio netto > 0, t ≥ 2, almeno 200 ingressi). Se non lo supera, **rischio ammesso = 0** (niente denaro reale oltre agli esperimenti di esecuzione).
+2. Si ipotizza un vantaggio pari al **50%** di quello misurato fuori campione (R traslati di metà della media).
+3. Si prende il **massimo** rischio per trade della griglia (0,1-20%) che soddisfa **contemporaneamente**:
+   - 5° percentile del rendimento a 12 mesi ≥ **−20%**;
+   - probabilità che il **drawdown massimo** entro 12 mesi raggiunga il 50% **< 1%** (lettura più severa di "perdita ≥ 50%": conta anche una perdita poi recuperata);
+   - tutti i rischi inferiori soddisfano anch'essi le due condizioni.
+4. **Vincolo di contemporaneità**: la curva tratta i trade in sequenza, mentre nella realtà più posizioni sono aperte insieme. Il rischio non può superare `InpMaxHeatPct` (6%) diviso per il numero massimo di posizioni simultanee osservato nel test.
+5. **Kelly** viene riportato solo come **indicatore diagnostico** della sensibilità al rischio. Non è mai un parametro operativo: l'edge è stimato con errore e i trade non sono indipendenti.
+6. Il rischio risultante si fissa **una volta**. Non si alza per recuperare perdite né per raggiungere un obiettivo di rendimento.
+
+Collaudo sui log sintetici 2017-2020 (dati già osservati, quindi **non** è un risultato): portafoglio → curva 10%, limite di contemporaneità 6%/5 → **1,2% per trade**; ogni singolo strumento → **0**, perché nessuno ha 200 ingressi.
+
+### Tre universi da non confondere
+
+| Universo | Cosa rappresenta | Cosa sappiamo oggi (2005-2020, in-sample) |
+|---|---|---|
+| **Portafoglio C** | la variante C su tutti gli strumenti validati, al rischio della regola | R medio +0,033 per ingresso; il vantaggio viene soprattutto da oro, indici e petrolio |
+| **EURUSD C** | la variante C su un solo strumento | R medio +0,004 per ingresso: vantaggio praticamente nullo; ~10 trade l'anno, quindi non potrà mai raggiungere 200 ingressi nel periodo di test → per la regola, **rischio ammesso 0** |
+| **Conto da 50 €** | EURUSD C al lotto minimo, cioè ~50% di rischio per trade | a 12 mesi: esito mediano +1%, 5° percentile −60%, P(DD ≥ 50%) 17% → **esperimento di esecuzione**, non un investimento né una misura della strategia |
+
+**Portafoglio C ≠ EURUSD C ≠ conto da 50 €.** Un risultato positivo del portafoglio non si trasferisce al conto da 50 €, perché 50 € non permettono di negoziare gli strumenti che generano il vantaggio.
+
 ## 7. Dopo la validazione
 
 - **Criteri superati** → forward su demo di 3-6 mesi con il preset congelato, poi conto reale minimo. Il criterio 10 (esecuzione) si misura confrontando `CTO_trades_*_live.csv` con il backtest dello stesso periodo.

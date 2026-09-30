@@ -184,6 +184,64 @@ def max_risk_for_dd(R, n_trades, max_dd, pct=99, n_sims=4000):
     return 100 * lo, stats_at(lo)[1]
 
 
+# ---------------------------------------------------------------- regola pre-registrata per la scelta del rischio
+RISK_RULE = {
+    "edge_fraction": 0.5,        # si assume un edge pari al 50% di quello misurato fuori campione
+    "p5_12m_min": -0.20,         # 5° percentile del rendimento a 12 mesi >= -20%
+    "p_dd50_12m_max": 0.01,      # P(drawdown massimo >= 50% entro 12 mesi) < 1% (lettura piu' severa di "perdita >= 50%")
+    "grid": [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 7.5, 10, 15, 20],
+    # prerequisito: l'edge dell'insieme considerato deve superare il criterio 2 (altrimenti rischio ammesso = 0)
+    "t_min": 2.0,
+    "n_min": 200,
+    # vincolo di contemporaneita': rischio per trade <= heat massimo dell'EA / posizioni simultanee massime osservate
+    "heat_max": 6.0,
+}
+
+
+def max_concurrent(trades):
+    """Numero massimo di posizioni aperte contemporaneamente (principale), dai tempi di apertura/chiusura."""
+    ev = [(t, 1) for t in trades.t_in] + [(t, -1) for t in trades.t_out]
+    ev.sort(key=lambda x: (x[0], x[1]))
+    cur = best = 0
+    for _, d in ev:
+        cur += d
+        best = max(best, cur)
+    return best
+
+
+def pre_registered_risk(trades):
+    """Applica la regola congelata. Ritorna (tabella, rischio scelto in %, R medio misurato, R medio ipotizzato, Kelly diagnostico)."""
+    t = trades[["t_out", "R"]].dropna()
+    m = t.R.mean()
+    n = len(t)
+    tstat = m / (t.R.std(ddof=1) / math.sqrt(n)) if n > 2 and t.R.std() > 0 else np.nan
+    if not np.isfinite(m) or m <= 0 or n < RISK_RULE["n_min"] or not (tstat >= RISK_RULE["t_min"]):
+        return pd.DataFrame({"motivo": [f"edge non dimostrato: R medio {m:+.4f}, t = {tstat:.2f}, n = {n} "
+                                        f"(servono t >= {RISK_RULE['t_min']:g} e n >= {RISK_RULE['n_min']})"]}), 0.0, m, np.nan, 0.0
+    R = t.R - (1 - RISK_RULE["edge_fraction"]) * m             # edge ridotto al 50%
+    tt = pd.DataFrame({"t_out": t.t_out, "R": R})
+    tab = risk_curve(tt, risks=RISK_RULE["grid"], horizons=[12])
+    tab = tab[tab.orizzonte == "12 mesi"].copy()
+    tab["5° perc. rendimento 12m"] = tab["5° perc. (x)"] - 1
+    tab["ammesso"] = (tab["5° perc. rendimento 12m"] >= RISK_RULE["p5_12m_min"]) & (tab["P(DD>=50%)"] < RISK_RULE["p_dd50_12m_max"])
+    ok = tab[tab.ammesso]
+    # si prende il massimo rischio ammesso tale che anche TUTTI i rischi inferiori siano ammessi (niente "isole")
+    chosen = 0.0
+    for _, r in tab.sort_values("rischio/trade %").iterrows():
+        if not r.ammesso:
+            break
+        chosen = r["rischio/trade %"]
+    kelly = R.mean() / (R ** 2).mean()
+    return tab, chosen, m, R.mean(), kelly
+
+
+def to_md_rule(tab):
+    t = tab[["rischio/trade %", "rend. annuo mediano", "5° perc. rendimento 12m", "P(DD>=50%)", "ammesso"]].copy()
+    for c in ["rend. annuo mediano", "5° perc. rendimento 12m", "P(DD>=50%)"]:
+        t[c] = t[c].map(lambda v: f"{v:.1%}")
+    return t.to_markdown(index=False)
+
+
 def fmt(df):
     return df.to_markdown(floatfmt=".4f")
 
@@ -283,6 +341,29 @@ def main():
     L.append("Trade trattati in sequenza per data di chiusura: ai rischi alti la perdita simultanea di più posizioni è "
              "sottostimata. Rovina = perdita del 90% in un qualsiasi momento.\n")
     L.append(risk_curve_md(risk_curve(P[["t_out", "R"]].dropna(), risks=a.risk_curve)))
+
+    # 3a-bis. regola pre-registrata di scelta del rischio
+    L.append("\n## 3c. Rischio per trade secondo la regola pre-registrata\n")
+    L.append("Regola (docs/VALIDAZIONE_2020_2026.md, sezione 6b). Prerequisito: l'edge dell'insieme considerato supera il "
+             "criterio 2 (R medio > 0, t >= 2, almeno 200 ingressi), altrimenti il rischio ammesso è 0. Poi: con un edge pari al 50% di quello misurato qui, il massimo "
+             "rischio per trade tale che il 5° percentile del rendimento a 12 mesi sia >= -20% e la probabilità di un drawdown "
+             ">= 50% entro 12 mesi sia < 1%, con tutti i rischi inferiori anch'essi ammessi.\n")
+    for lab, sub in [("portafoglio (tutti i simboli dei log)", P)] + [(f"solo {s_}", g_) for s_, g_ in P.groupby("symbol")]:
+        tab, chosen, m_meas, m_used, kelly = pre_registered_risk(sub)
+        if "motivo" in tab:
+            L.append(f"- **{lab}**: **rischio ammesso 0** ({tab.motivo.iloc[0]}).")
+            continue
+        top = chosen >= max(RISK_RULE["grid"])
+        conc = max_concurrent(sub[sub.role == "CORE"]) if "role" in sub else 1
+        cap = RISK_RULE["heat_max"] / max(conc, 1)
+        final = min(chosen, cap)
+        L.append(f"- **{lab}**: R medio misurato {m_meas:+.4f}, ipotizzato {m_used:+.4f} → curva: {chosen:g}% per trade; "
+                 f"posizioni simultanee massime {conc} → limite di heat {RISK_RULE['heat_max']:g}%/{conc} = {cap:.2f}% → "
+                 f"**rischio ammesso {final:.2f}% per trade**. "
+                 f"Kelly con l'edge ipotizzato: {100 * kelly:.1f}% (solo diagnostico, **non** è un parametro operativo)."
+                 + (" ATTENZIONE: raggiunto il massimo della griglia, il limite reale non è stato trovato." if top else ""))
+        if lab.startswith("portafoglio"):
+            L.append("\n" + to_md_rule(tab) + "\n")
 
     # 3b. motivi degli ingressi (eventi)
     ev_pat = a.events if a.events is not None else [x.replace("CTO_trades_", "CTO_events_") for x in a.logs]
