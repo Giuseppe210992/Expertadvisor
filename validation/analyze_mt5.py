@@ -45,6 +45,29 @@ def load(patterns):
     return df.sort_values("time")
 
 
+# categorie dei codici evento scritti dall'EA (CTO/EventLog.mqh)
+EVENT_CAT = {
+    "NO_SIGNAL": "normale", "SIGNAL": "normale", "TRADE_OPENED": "eseguito", "SHADOW_OPENED": "normale (edge monitor)",
+    "DAYTP_NO_REENTRY": "normale (regola C)", "SIGNAL_EXPIRED": "segnale perso",
+    "RISK_TOO_HIGH": "CAPITALE", "MARGIN_TOO_HIGH": "CAPITALE/LEVA", "LEVERAGE_LIMIT": "CAPITALE/LEVA",
+    "LOT_BELOW_MINIMUM": "GRANULARITA'", "HEAT_LIMIT": "RISCHIO", "RISK_REJECTED": "RISCHIO",
+    "ENTRIES_BLOCKED": "RISCHIO (limiti giornalieri)", "MINLOT_OVERRIDE": "ESPERIMENTO (rischio oltre il previsto)",
+    "SPREAD_TOO_HIGH": "filtro costo (rinvio)", "ROLLOVER_BLOCKED": "filtro operativo (rinvio)",
+    "TRADING_DISABLED": "operativo (rinvio)", "ORDER_FAILED": "operativo (rinvio)",
+}
+# codici che rendono NON valido il test principale di un simbolo (problemi di capitale, non di strategia)
+CAPITAL_CODES = {"RISK_TOO_HIGH", "MARGIN_TOO_HIGH", "LEVERAGE_LIMIT", "LOT_BELOW_MINIMUM", "HEAT_LIMIT", "MINLOT_OVERRIDE"}
+
+
+def load_events(patterns):
+    files = [f for p in patterns for f in glob.glob(p)]
+    if not files:
+        return pd.DataFrame()
+    ev = pd.concat([pd.read_csv(f, sep=";") for f in files], ignore_index=True)
+    ev["time"] = pd.to_datetime(ev["time"], format="%Y.%m.%d %H:%M:%S", errors="coerce")
+    return ev
+
+
 def positions(df):
     """Una riga per posizione (ingresso): P&L netto, costi separati, rischio iniziale (1 R)."""
     rows = []
@@ -177,6 +200,8 @@ def main():
     ap.add_argument("--max-dd", type=float, nargs="+", default=[0.10, 0.20, 0.30],
                     help="drawdown tollerati per il calcolo del rischio massimo per trade (99° percentile)")
     ap.add_argument("--expected", nargs="*", default=[], help="simboli attesi: segnala quelli senza trade")
+    ap.add_argument("--events", nargs="*", default=None,
+                    help="log eventi dell'EA (default: stessi file dei --logs con 'trades' -> 'events')")
     ap.add_argument("--out", default="report_validazione.md")
     a = ap.parse_args()
 
@@ -250,6 +275,31 @@ def main():
         L.append(f"| {md:.0%} | {rk:.2f}% | {med:+.1%} |")
     L.append(f"\nPeggior serie negativa osservata: {port_core.get('serie_neg_max')} trade; peggior trade: {port_core.get('peggior_trade_R', np.nan):.2f} R")
 
+    # 3b. motivi degli ingressi (eventi)
+    ev_pat = a.events if a.events is not None else [x.replace("CTO_trades_", "CTO_events_") for x in a.logs]
+    EV = load_events(ev_pat)
+    cap_bad = pd.DataFrame()
+    if not EV.empty:
+        if a.start:
+            EV = EV[EV.time >= pd.Timestamp(a.start)]
+        if a.end:
+            EV = EV[EV.time <= pd.Timestamp(a.end) + pd.Timedelta(days=1)]
+        L.append("\n## 3b. Motivi di ingressi eseguiti, rinviati e saltati\n")
+        cnt = EV.pivot_table(index=["code"], columns="symbol", values="time", aggfunc="count", fill_value=0)
+        cnt.insert(0, "categoria", [EVENT_CAT.get(c, "?") for c in cnt.index])
+        L.append(fmt(cnt))
+        cap_bad = EV[EV.code.isin(CAPITAL_CODES)]
+        exp = EV[EV.code == "SIGNAL_EXPIRED"]
+        if len(exp):
+            L.append("\nSegnali scaduti senza esecuzione (con l'ultimo motivo di rinvio):\n")
+            L.append(fmt(exp.groupby(["symbol", "role", "detail"]).size().rename("n").to_frame()))
+        if len(cap_bad):
+            L.append("\n**Ingressi saltati o alterati per CAPITALE/MARGINE/GRANULARITA'**: il test principale dei simboli "
+                     "seguenti non misura la strategia al rischio previsto e va ripetuto con un deposito più alto:\n")
+            L.append(fmt(cap_bad.groupby(["symbol", "role", "code"]).size().rename("n").to_frame()))
+    else:
+        L.append("\n## 3b. Motivi degli ingressi\n\nNessun log eventi trovato (EA precedente alla versione con EventLog).")
+
     # 4. criteri
     L.append("\n## 4. Criteri pre-registrati\n")
     c = CRITERI
@@ -271,6 +321,8 @@ def main():
          sum(v > 0 for v in pos.values()) / len(pos) >= c["diffusione_min"]),
         ("6b Nessuno strumento > %.0f%% del profitto" % (100 * c["concentrazione_max"]), f"{conc:.0%}", conc <= c["concentrazione_max"]),
         ("7 Positivo in entrambe le metà dell'OOS (split %s)" % a.split, f"{h1:,.0f} / {h2:,.0f}", h1 > 0 and h2 > 0),
+        ("0 Validità del test: nessun ingresso saltato/alterato per capitale, margine o granularità",
+         "nessuno" if cap_bad.empty else f"{len(cap_bad)} eventi su {cap_bad.symbol.nunique()} simboli", cap_bad.empty),
     ]
     L.append("| Criterio | Valore | Esito |\n|---|---|---|")
     for name, val, ok in checks:

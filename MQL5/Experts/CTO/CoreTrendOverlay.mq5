@@ -30,6 +30,7 @@
 #include <CTO/EdgeMonitor.mqh>
 #include <CTO/OverlayBook.mqh>
 #include <CTO/TradeLog.mqh>
+#include <CTO/EventLog.mqh>
 
 //=== input ===========================================================
 input group "=== Posizione principale (trend di lungo periodo) ==="
@@ -101,6 +102,7 @@ CCostTracker   g_cost;
 CEdgeMonitor   g_edge;
 COverlayBook   g_book;
 CTradeLog      g_log;
+CEventLog      g_ev;
 bool           g_net = true;          // overlay come gambe virtuali (netting)
 datetime       g_lastCoreBar = 0, g_lastOvBar = 0;
 double         g_commPerLot = 0.0;    // commissione per lotto per lato osservata (per le gambe ombra)
@@ -120,6 +122,15 @@ bool     g_pendCoreClose = false;     // uscita per regime in attesa (fuori roll
 bool     g_pendDayTp = false;         // presa di profitto giornaliera in attesa (fuori rollover)
 datetime g_dayTpDay = 0;              // giornata D1 in cui e' scattata la presa di profitto
 datetime g_lastH1Bar = 0;
+
+//--- codice evento per il motivo restituito da CCtoRisk::CanOpen (solo strumentazione)
+string RiskReasonCode(const string why)
+  {
+   if(StringFind(why, "heat") >= 0) return "HEAT_LIMIT";
+   if(StringFind(why, "leva") >= 0) return "LEVERAGE_LIMIT";
+   if(StringFind(why, "margin") >= 0 || StringFind(why, "Margin") >= 0) return "MARGIN_TOO_HIGH";
+   return "RISK_REJECTED";
+  }
 
 //--- prototipi (alcune funzioni sono richiamate prima della loro definizione)
 void CloseVirtualLeg(const int i, const string why);
@@ -410,13 +421,27 @@ void OnNewCoreBar(void)
      }
    //--- nessuna principale: segnale di ingresso
    g_pendCoreClose = false;
+   if(g_pendCore.active) g_ev.Log(0, "SIGNAL_EXPIRED", g_pendCore.dir, "sostituito da nuova barra; ultimo rinvio: " + g_ev.LastDefer(0));
    g_pendCore.active = false;
-   if(g_risk.EntriesBlocked()) return;
+   g_ev.ResetDefer(0);
+   if(g_risk.EntriesBlocked())
+     {
+      int sb = g_core.EntrySignal();          // funzione pura: calcolata solo per il registro
+      if(sb != 0) g_ev.Log(0, "ENTRIES_BLOCKED", sb, "segnale presente ma ingressi bloccati (perdita giornaliera/stop operativo)");
+      return;
+     }
    //--- nella giornata della presa di profitto non si valuta un nuovo ingresso (come nel backtest)
-   if(InpCoreDayTpAtr > 0.0 && g_dayTpDay != 0 && g_dayTpDay == iTime(_Symbol, InpTfCore, 1)) return;
+   if(InpCoreDayTpAtr > 0.0 && g_dayTpDay != 0 && g_dayTpDay == iTime(_Symbol, InpTfCore, 1))
+     {
+      int sd = g_core.EntrySignal();          // funzione pura: calcolata solo per il registro
+      g_ev.Log(0, "DAYTP_NO_REENTRY", sd, "giornata della presa di profitto: nessun nuovo ingresso valutato");
+      return;
+     }
    int sig = g_core.EntrySignal();
+   if(sig == 0) g_ev.Log(0, "NO_SIGNAL", 0, "regime " + IntegerToString(g_ind.Regime()));
    if(sig != 0)
      {
+      g_ev.Log(0, "SIGNAL", sig, StringFormat("stop %.5f", g_core.InitialStopDistance()));
       g_pendCore.active = true;
       g_pendCore.dir = sig;
       g_pendCore.stopDist = g_core.InitialStopDistance();
@@ -442,9 +467,16 @@ void TryExecuteCore(void)
       return;
      }
    if(!g_pendCore.active) return;
-   if(TimeCurrent() - g_pendCore.created > g_s.signalExpiryHours * 3600) { g_pendCore.active = false; return; }
-   if(g_risk.EntriesBlocked() || g_exec.InRollover() || !g_exec.TradingAllowed()) return;
-   if(!g_exec.SpreadOk(g_ind.AtrCore(1))) return;
+   if(TimeCurrent() - g_pendCore.created > g_s.signalExpiryHours * 3600)
+     {
+      g_ev.Log(0, "SIGNAL_EXPIRED", g_pendCore.dir, "ultimo rinvio: " + g_ev.LastDefer(0));
+      g_pendCore.active = false;
+      return;
+     }
+   if(g_risk.EntriesBlocked()) { g_ev.Defer(0, "ENTRIES_BLOCKED", g_pendCore.dir, "perdita giornaliera/stop operativo"); return; }
+   if(g_exec.InRollover()) { g_ev.Defer(0, "ROLLOVER_BLOCKED", g_pendCore.dir, "finestra di rollover"); return; }
+   if(!g_exec.TradingAllowed()) { g_ev.Defer(0, "TRADING_DISABLED", g_pendCore.dir, "trading non consentito"); return; }
+   if(!g_exec.SpreadOk(g_ind.AtrCore(1))) { g_ev.Defer(0, "SPREAD_TOO_HIGH", g_pendCore.dir, StringFormat("spread %d pt", g_sm.SpreadPoints())); return; }
    ulong t; int d; double v, e, sl; datetime ot;
    if(GetCore(t, d, v, e, sl, ot)) { g_pendCore.active = false; return; }
    //--- un nuovo ciclo chiude eventuali overlay residui del ciclo precedente
@@ -459,10 +491,13 @@ void TryExecuteCore(void)
       if(InpMinLotMaxRiskPct > 0.0 && minRiskPct <= InpMinLotMaxRiskPct)
         {
          lots = g_sm.MinLot();
+         g_ev.Log(0, "MINLOT_OVERRIDE", g_pendCore.dir, StringFormat("rischio reale %.2f%% (richiesto %.2f%%)", minRiskPct, g_s.coreRiskPct));
          PrintFormat("[CTO] ATTENZIONE: lotto minimo con rischio reale %.1f%% dell'equity (richiesto %.2f%%)", minRiskPct, g_s.coreRiskPct);
         }
       else
         {
+         g_ev.Log(0, "RISK_TOO_HIGH", g_pendCore.dir, StringFormat("lotto minimo = %.2f%% dell'equity, limite %.2f%%, tetto %.1f%%",
+                  minRiskPct, g_s.coreRiskPct, InpMinLotMaxRiskPct));
          PrintFormat("[CTO] ingresso saltato: il lotto minimo rischierebbe %.1f%% dell'equity (limite %.2f%%, tetto lotto minimo %.1f%%)",
                      minRiskPct, g_s.coreRiskPct, InpMinLotMaxRiskPct);
          g_pendCore.active = false;
@@ -470,7 +505,13 @@ void TryExecuteCore(void)
         }
      }
    string why;
-   if(!g_risk.CanOpen(g_pendCore.dir, lots, g_pendCore.stopDist, true, why)) { PrintFormat("[CTO] ingresso principale rifiutato: %s", why); g_pendCore.active = false; return; }
+   if(!g_risk.CanOpen(g_pendCore.dir, lots, g_pendCore.stopDist, true, why))
+     {
+      g_ev.Log(0, RiskReasonCode(why), g_pendCore.dir, why + StringFormat(" (%.2f lotti)", lots));
+      PrintFormat("[CTO] ingresso principale rifiutato: %s", why);
+      g_pendCore.active = false;
+      return;
+     }
    double px = (g_pendCore.dir > 0) ? g_sm.Ask() : g_sm.Bid();
    double slp = px - g_pendCore.dir * g_pendCore.stopDist;
    SFillInfo fi;
@@ -479,10 +520,15 @@ void TryExecuteCore(void)
       g_cost.OnFill(ROLE_CORE, lots, fi.spreadAtFill, fi.slippage);
       g_log.RememberFill(fi.deal, fi.requested, fi.slippage);
       g_coreStop = g_sm.NormalizePrice(slp);
+      g_ev.Log(0, "TRADE_OPENED", g_pendCore.dir, StringFormat("%.2f lotti @ %.5f, spread %.1f pt, slippage %.1f pt", lots, fi.filled,
+               fi.spreadAtFill / g_sm.Point(), fi.slippage / g_sm.Point()));
+      g_ev.ResetDefer(0);
       PrintFormat("[CTO] principale %s %.2f lotti @ %.5f SL %.5f (spread %.1f pt, slippage %.1f pt)",
                   g_pendCore.dir > 0 ? "LONG" : "SHORT", lots, fi.filled, slp, fi.spreadAtFill / g_sm.Point(), fi.slippage / g_sm.Point());
       g_pendCore.active = false;
      }
+   else
+      g_ev.Defer(0, "ORDER_FAILED", g_pendCore.dir, "ordine rifiutato dal server (nuovo tentativo al tick successivo)");
   }
 
 //+------------------------------------------------------------------+
@@ -545,6 +591,8 @@ void OnNewOvBar(void)
    g_pendOv.stopDist = g_ov.StopDistance();
    g_pendOv.created = TimeCurrent();
    g_pendOv.shadow = hasOpen ? followShadow : !g_edge.Enabled();
+   g_ev.ResetDefer(1);
+   g_ev.Log(1, "SIGNAL", g_pendOv.dir, g_pendOv.shadow ? "ombra (edge monitor)" : "reale");
    PrintFormat("[CTO] segnale overlay %s (%s), edge R medio=%.3f su %d", g_pendOv.dir > 0 ? "LONG" : "SHORT",
                g_pendOv.shadow ? "OMBRA" : "REALE", g_edge.RecentMean(), g_edge.Count());
   }
@@ -552,8 +600,14 @@ void OnNewOvBar(void)
 void TryExecuteOverlay(void)
   {
    if(!g_pendOv.active) return;
-   if(TimeCurrent() - g_pendOv.created > g_s.signalExpiryHours * 3600) { g_pendOv.active = false; return; }
-   if(g_risk.EntriesBlocked() || g_exec.InRollover()) return;
+   if(TimeCurrent() - g_pendOv.created > g_s.signalExpiryHours * 3600)
+     {
+      g_ev.Log(1, "SIGNAL_EXPIRED", g_pendOv.dir, "ultimo rinvio: " + g_ev.LastDefer(1));
+      g_pendOv.active = false;
+      return;
+     }
+   if(g_risk.EntriesBlocked()) { g_ev.Defer(1, "ENTRIES_BLOCKED", g_pendOv.dir, "perdita giornaliera/stop operativo"); return; }
+   if(g_exec.InRollover()) { g_ev.Defer(1, "ROLLOVER_BLOCKED", g_pendOv.dir, "finestra di rollover"); return; }
    ulong t; int d; double v, e, sl; datetime ot;
    if(!GetCore(t, d, v, e, sl, ot)) { g_pendOv.active = false; return; }
    double coreNom = CoreNominalVolume(v);
@@ -562,7 +616,13 @@ void TryExecuteOverlay(void)
    //    resta sempre almeno un lotto minimo di esposizione nella direzione della principale
    if(g_net && !g_pendOv.shadow) room = MathMin(room, v - g_sm.MinLot());
    double lots = g_sm.NormalizeLotsDown(MathMin(g_s.hStep * coreNom, room));
-   if(lots <= 0.0) { g_pendOv.active = false; return; }
+   if(lots <= 0.0)
+     {
+      g_ev.Log(1, "LOT_BELOW_MINIMUM", g_pendOv.dir, StringFormat("volume richiesto %.4f, spazio %.4f, lotto minimo %.2f",
+               g_s.hStep * coreNom, room, g_sm.MinLot()));
+      g_pendOv.active = false;
+      return;
+     }
    int od = g_pendOv.dir;
    double R = g_pendOv.stopDist;
    double vpu = g_sm.ValuePerPriceUnit();
@@ -580,20 +640,33 @@ void TryExecuteOverlay(void)
       l.costAcc = 0.5 * g_sm.Spread() * lots * vpu + g_commPerLot * lots;
       l.risk0 = lots * R * vpu;
       g_book.AddLeg(l);
+      g_ev.Log(1, "SHADOW_OPENED", od, StringFormat("%.2f lotti virtuali @ %.5f", lots, l.entry));
       g_pendOv.active = false;
       return;
      }
-   if(!g_exec.TradingAllowed() || !g_exec.SpreadOk(g_ind.AtrOv(1))) return;
+   if(!g_exec.TradingAllowed()) { g_ev.Defer(1, "TRADING_DISABLED", g_pendOv.dir, "trading non consentito"); return; }
+   if(!g_exec.SpreadOk(g_ind.AtrOv(1))) { g_ev.Defer(1, "SPREAD_TOO_HIGH", g_pendOv.dir, StringFormat("spread %d pt", g_sm.SpreadPoints())); return; }
    //--- in hedging il ticket opposto aggiunge nozionale e margine: controlli completi.
    //    in netting l'overlay RIDUCE l'esposizione: nessun controllo di leva/margine necessario.
    string why;
-   if(!g_net && !g_risk.CanOpen(od, lots, R, false, why)) { PrintFormat("[CTO] overlay rifiutato: %s", why); g_pendOv.active = false; return; }
+   if(!g_net && !g_risk.CanOpen(od, lots, R, false, why))
+     {
+      g_ev.Log(1, RiskReasonCode(why), od, why + StringFormat(" (%.2f lotti)", lots));
+      PrintFormat("[CTO] overlay rifiutato: %s", why);
+      g_pendOv.active = false;
+      return;
+     }
 
    if(g_net)
      {
       //--- NETTING: l'overlay riduce la posizione netta; stop/TP gestiti dall'EA
       SFillInfo fi;
-      if(!g_exec.Open(g_s.magicOv, od, lots, 0.0, 0.0, "CTO OV net", fi)) return;
+      if(!g_exec.Open(g_s.magicOv, od, lots, 0.0, 0.0, "CTO OV net", fi))
+        {
+         g_ev.Defer(1, "ORDER_FAILED", od, "ordine rifiutato dal server (nuovo tentativo al tick successivo)");
+         return;
+        }
+      g_ev.Log(1, "TRADE_OPENED", od, StringFormat("netting %.2f lotti @ %.5f", lots, fi.filled));
       g_cost.OnFill(ROLE_OVERLAY, lots, fi.spreadAtFill, fi.slippage);
       g_log.RememberFill(fi.deal, fi.requested, fi.slippage);
       SVirtualLeg l;
@@ -637,7 +710,13 @@ void TryExecuteOverlay(void)
          en.openTickets++;
          en.entry = fb.filled;
         }
-      if(en.openTickets > 0) g_book.AddEntry(en);
+      if(en.openTickets > 0)
+        {
+         g_book.AddEntry(en);
+         g_ev.Log(1, "TRADE_OPENED", od, StringFormat("hedge %d ticket, %.2f lotti", en.openTickets, vA + vB));
+        }
+      else
+         g_ev.Log(1, "ORDER_FAILED", od, "nessun ticket aperto");
      }
    g_pendOv.active = false;
   }
@@ -714,6 +793,7 @@ int OnInit(void)
    g_edge.Init(_Symbol, g_s.magicOv, g_s.edgeN, g_s.edgeMin);
    g_book.Init(_Symbol, g_s.magicOv);
    g_log.Init(GetPointer(g_sm), g_s.magicCore, InpTradeLog);
+   g_ev.Init(_Symbol, g_s.magicCore, InpTradeLog);
    if(!g_net) g_book.Purge();
    g_pendCore.active = false;
    g_pendOv.active = false;
@@ -732,6 +812,7 @@ void OnDeinit(const int reason)
    Print("[CTO] riepilogo costi e P&L:\n" + g_cost.Summary());
    g_cost.Deinit();
    g_log.Deinit();
+   g_ev.Deinit();
    g_ind.Release();
    Comment("");
   }

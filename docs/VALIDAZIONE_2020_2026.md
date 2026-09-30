@@ -1,6 +1,6 @@
 # Protocollo di validazione out-of-sample 2020-2026: variante C
 
-*Pre-registrazione. Questo documento viene scritto e committato **prima** di guardare qualsiasi risultato 2020-2026. Lo stato congelato è l'ultimo commit che modifica questo documento (vedi `git log -1 -- docs/VALIDAZIONE_2020_2026.md`). Dopo la prima versione (commit `f80349f`) sono state fatte, **prima di vedere qualsiasi dato 2020-2026**, solo correzioni che non cambiano le decisioni di trading del preset congelato: deposito del test (da 10.000 a 100.000, altrimenti i trade sarebbero saltati), prototipi di funzione, slippage e livelli SL/TP nel log, capitale necessario nel CostReport, range dell'input del preset da 50 €. Il tag `variante-C-congelata` va creato su quel commit.
+*Pre-registrazione. Questo documento viene scritto e committato **prima** di guardare qualsiasi risultato 2020-2026. **Logica di trading congelata = commit `410d4e9`**: nessuna regola, parametro o criterio della variante C cambierà più. I commit successivi aggiungono **solo strumentazione** (registro dei motivi degli ingressi, tabella del capitale necessario), senza toccare nessuna decisione di trading. Si verifica con `git diff 410d4e9 -- MQL5/Experts MQL5/Include`: escluse le righe `g_ev.` e il nuovo file `EventLog.mqh`, restano solo `if` composti spezzati in `if` in sequenza con lo stesso esito. Il test si esegue sull'ultimo commit (serve il registro degli eventi); fino a compilazione ed esecuzione riuscite nessun commit è da considerare validato.
 
 ## 1. Principi
 
@@ -39,8 +39,8 @@ Nota: USDJPY non era nel dataset di ricerca, quindi è un test fuori campione an
 1. checkout del commit congelato (o del tag `variante-C-congelata`, se creato) e copia di `MQL5/` nella cartella dati del terminale; compilazione in MetaEditor: 0 errori, e 0 warning oltre a eventuali "possible loss of data" su conversioni numeriche. Il codice usa `DEAL_SL`/`DEAL_TP` (proprietà dei deal presenti nelle build MT5 recenti): se il compilatore non le riconosce, aggiornare il terminale. Qualsiasi errore va corretto **senza cambiare la logica di trading**.
 2. Verifica visuale su 2-3 mesi di un simbolo: ingressi solo dopo la chiusura D1 e fuori rollover, presa di profitto giornaliera quando il movimento favorevole raggiunge 0,5 ATR, stop sul server a 4 ATR.
 3. Per ciascuno dei 7 simboli: Strategy Tester con il preset congelato, dal 2019-01-01 al 2026-09-30, deposito 100.000, leva 1:30.
-   **Controllo obbligatorio**: nel journal del tester non devono comparire righe "ingresso saltato: il lotto minimo rischierebbe…". Se compaiono, il deposito è troppo piccolo per quel simbolo: si alza il deposito (non il rischio) e si ripete il test di quel simbolo.
-4. Raccolta dei log da `Common\Files`: `CTO_trades_<simbolo>_710100_tester.csv` (e `CTO_daily_*.csv`). Il file del tester viene riscritto a ogni test: copiarlo dopo ogni simbolo.
+   **Controllo di validità**: nessun ingresso deve essere saltato o alterato per **capitale, margine o granularità del lotto** (codici `RISK_TOO_HIGH`, `MARGIN_TOO_HIGH`, `LEVERAGE_LIMIT`, `LOT_BELOW_MINIMUM`, `HEAT_LIMIT`, `MINLOT_OVERRIDE` nel file `CTO_events_*`). Se compaiono, il deposito è troppo piccolo per quel simbolo: si alza il deposito (**non** il rischio) e si ripete il test di quel simbolo. I trade mancati perché la strategia non dà segnale (`NO_SIGNAL`), per la regola della variante C (`DAYTP_NO_REENTRY`) o rinviati dai filtri (`SPREAD_TOO_HIGH`, `ROLLOVER_BLOCKED`) sono **normali** e fanno parte del risultato.
+4. Raccolta dei log da `Common\Files`: `CTO_trades_<simbolo>_710100_tester.csv`, `CTO_events_<simbolo>_710100_tester.csv` (e `CTO_daily_*.csv`). Il file del tester viene riscritto a ogni test: copiarlo dopo ogni simbolo.
 5. Analisi:
    ```bash
    python validation/analyze_mt5.py --logs "logs/CTO_trades_*_tester.csv" --deposit 100000 \
@@ -55,6 +55,7 @@ Nota: USDJPY non era nel dataset di ricerca, quindi è un test fuori campione an
 
 | # | Criterio | Soglia |
 |---|---|---|
+| 0 | Validità del test: nessun ingresso saltato o alterato per capitale, margine o granularità | nessun evento di quelle categorie |
 | 1 | Sharpe annuo netto del portafoglio dei 7 strumenti | ≥ 0,5 |
 | 2 | R medio netto per ingresso della principale | > 0 con t ≥ 2 e almeno 200 ingressi |
 | 4 | Profit factor netto | ≥ 1,15 |
@@ -70,6 +71,34 @@ Criteri valutati a parte:
 - **10 (esecuzione)**: nel forward, spread e slippage medi entro +25% di quelli del backtest.
 
 **Esito**: la variante C è considerata validata solo se superano **tutti** i criteri 1-7. Criterio 3 (overlay): se il contributo netto degli overlay è ≤ 0, per il forward si imposta `InpOvAgainst = OV_DISABLED`. È l'unica modifica ammessa, ed è decisa ora.
+
+## 4b. Codici degli eventi (file `CTO_events_*`)
+
+| Codice | Significato | Categoria |
+|---|---|---|
+| `NO_SIGNAL` | nessun segnale alla chiusura D1 | normale |
+| `SIGNAL` | segnale generato, in attesa di esecuzione | normale |
+| `TRADE_OPENED` | ingresso eseguito | eseguito |
+| `DAYTP_NO_REENTRY` | giornata della presa di profitto: nessun nuovo ingresso | regola della variante C |
+| `SHADOW_OPENED` | overlay tracciato ma non eseguito (edge monitor) | regola della variante C |
+| `SPREAD_TOO_HIGH` | ingresso rinviato: spread oltre il 5% dell'ATR | filtro di costo |
+| `ROLLOVER_BLOCKED` | ingresso rinviato: finestra di rollover | filtro operativo |
+| `TRADING_DISABLED`, `ORDER_FAILED` | ingresso rinviato: trading non consentito o ordine rifiutato | operativo |
+| `SIGNAL_EXPIRED` | segnale non eseguito entro 24 ore (con l'ultimo motivo di rinvio) | segnale perso |
+| `ENTRIES_BLOCKED` | segnale durante il blocco per perdita giornaliera o stop operativo | limite di rischio |
+| `RISK_TOO_HIGH` | il lotto minimo rischia più del rischio previsto | **capitale** |
+| `MARGIN_TOO_HIGH`, `LEVERAGE_LIMIT` | margine o leva lorda insufficienti | **capitale/leva** |
+| `LOT_BELOW_MINIMUM` | volume calcolato sotto il lotto minimo | **granularità** |
+| `HEAT_LIMIT` | rischio aperto complessivo oltre il limite | rischio |
+| `MINLOT_OVERRIDE` | eseguito al lotto minimo oltre il rischio previsto | solo preset esperimento |
+
+## 4c. Registro dei risultati: cosa succede se il test va male
+
+Qualunque cosa emerga (profitto basso, perdita, drawdown elevato, costi eccessivi, pochi trade, un simbolo che fallisce) **si registra e basta**. Nessun parametro della variante C viene modificato per "salvarla". Un'eventuale nuova idea nata dai risultati è una nuova ricerca e richiede un periodo di validazione mai osservato.
+
+## 4d. Sequenza completa
+
+variante C congelata → compilazione ed esecuzione in MT5 → backtest 2020-2026 → analisi netta dopo tutti i costi → stress ×2/×3 → Monte Carlo → rischio massimo sostenibile (DD tollerato) → **capitale minimo necessario** (tabella di `merge_cost_reports.py`) → scelta di broker e conto → solo eventualmente l'esperimento da 50 €, che è un esperimento di micro-esecuzione e non il capitale con cui la strategia deve iniziare.
 
 ## 5. Scelta del broker (prima di qualsiasi conto reale)
 

@@ -34,6 +34,23 @@ def main(paths):
     df = pd.concat([pd.read_csv(f, sep=";") for f in files], ignore_index=True)
     df["col"] = df["broker"].astype(str) + " (" + df["server"].astype(str) + ")"
     print("# Confronto broker (dati misurati da CTO_CostReport)\n")
+    # --- tabella principale: capitale necessario perche' il lotto minimo rispetti il rischio per trade
+    print("## Capitale necessario (lotto minimo, stop della variante C = 4 x ATR20 D1)\n")
+    print("Perdita al minimo = perdita di UNA posizione al lotto minimo se colpisce lo stop, in valuta del conto. "
+          "Capitale per X% = capitale con cui quella perdita vale X% del conto. Il capitale per il portafoglio "
+          "è il massimo tra gli strumenti che si vogliono negoziare.\n")
+    for col, g in df.groupby("col"):
+        ccy = g["account_currency"].iloc[0]
+        t = pd.DataFrame({"Strumento": g["symbol"], "Lotto minimo": g["min_lot"],
+                          f"Perdita al minimo ({ccy})": g["risk_min_lot_at_stop"].round(2),
+                          "Capitale per 0,25%": g["capital_needed_risk_0_25pct"].round(0),
+                          "Capitale per 1%": g["capital_needed_risk_1pct"].round(0),
+                          "Capitale per 2%": g["capital_needed_risk_2pct"].round(0),
+                          "Margine lotto min.": g["margin_min_lot"].round(2)})
+        print(f"### {col}\n")
+        print(t.to_markdown(index=False))
+        print(f"\nCapitale per negoziare TUTTI gli strumenti: {g['capital_needed_risk_0_25pct'].max():,.0f} (0,25%) · "
+              f"{g['capital_needed_risk_1pct'].max():,.0f} (1%) · {g['capital_needed_risk_2pct'].max():,.0f} (2%) {ccy}\n")
     acc = df.groupby("col").first()
     print("## Conto\n")
     print(pd.DataFrame({lab: acc[c] for c, lab in ACCOUNT}).T.to_markdown())
