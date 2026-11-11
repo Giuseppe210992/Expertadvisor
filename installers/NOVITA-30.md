@@ -2,10 +2,10 @@
 
 ## Come installarlo
 
-Dalla Cloud Shell di Oracle (il comando con l'impronta sha256 è nel messaggio della chat):
+Dalla Cloud Shell di Oracle (impronta sha256: 0cb8a63aebe96c2451173359ce5992ad6e1b505c0a56c578d9c8c54f17846087):
 
 ```
-ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-latest.sh -o installa-giot-chat.sh && echo "<SHA256>  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-latest.sh -o installa-giot-chat.sh && echo "0cb8a63aebe96c2451173359ce5992ad6e1b505c0a56c578d9c8c54f17846087  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
 ```
 
 Dopo l'installazione, sul telefono chiudi la web app dal task manager e riaprila.
@@ -53,7 +53,7 @@ Gli eventi trovati dalla coda vanno nel repository LiveLocal come consegne. Il t
 - Strumenti della chat: 9/9.
 - Cowork che legge i link: 5/5.
 - Invio a LiveLocal: 31/31 (la consegna è accettata dal vero importatore di LiveLocal), interfaccia 14/14.
-- Regressione: vedi il messaggio in chat.
+- Regressione completa: app 92+45+36+40+37+8+14+9+22, office 36, compilazione 13, esportazione 10; server: archivio 87, lettore 106, connettori 32, Cowork 41, coda 29. Tutto verde.
 
 ## Cosa provare domattina (5 minuti)
 1. **Modelli** → Aggiungi un modello → la tua "Dichiarazione nulla a pretendere" → Compila per un cliente → Scarica. Poi compilala per un secondo cliente: deve essere già tutto a posto.
