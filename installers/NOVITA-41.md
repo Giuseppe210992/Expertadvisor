@@ -3,7 +3,7 @@
 ## Installazione
 
 ```
-__COMANDO__
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-latest.sh -o installa-giot-chat.sh && echo "095b6ed67eb03ae118e2febafa26aceff54f6c59e2cd992b935bd362c43be435  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
 ```
 
 ## Cosa cambia
@@ -39,4 +39,7 @@ __COMANDO__
 Oggi il server non distingue le persone: chi accede allo stesso server condivide la stessa memoria, come condivide l'archivio clienti. Per avere una memoria separata per ogni persona serve riconoscere chi ha fatto l'accesso. È il passo successivo, se ti serve.
 
 ## Collaudi
-__COLLAUDI__
+- Memoria sul server: 14/14 (cifrata sul disco, niente doppioni, tipi e sezioni validati, limite di 400 con priorità, uso contato, importazione, persiste al riavvio).
+- Nel browser con il server vero: 20/20 (migrazione dal browser, proposta «come lavori» da una correzione con conferma, richiamo solo dei ricordi pertinenti, lezione automatica in Code dopo un errore risolto e usata al lavoro successivo, preferenza in Code, Impostazioni → Memoria con fissa/modifica/aggiungi/elimina, secondo dispositivo).
+- Regressione completa: app 92, 45, 36, 40, 37, 8, 14, 9, 22, 16, 19, 10, 29, 22, 20, office 36, compilazione 13, esportazione 10; server 87, 106, 32, 41, 29, 31, 5, 41, 20, 25, 17, chiavi 10, Code 35, connettori 11, GitHub 26, memoria 14. Tutto verde.
+- Installatore: identico al 40 (in più il file memory.js).
