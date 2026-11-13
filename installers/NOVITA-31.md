@@ -2,6 +2,12 @@
 
 Riprende il metodo dei moduli compilati in claude.ai: si scrive sopra l'originale, quello che non c'è resta vuoto, ogni modulo ha le sue regole fisse e si consegna in PDF.
 
+## Installazione
+
+```
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-latest.sh -o installa-giot-chat.sh && echo "3268ab923d3d10550ed93b59fae060cb4487d2712161148b81ace9be589d977c  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
+```
+
 ## Cosa cambia
 
 ### 1. Stile di scrittura identico
