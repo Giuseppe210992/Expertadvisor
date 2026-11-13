@@ -13,7 +13,7 @@ LBASE="${PDFLIB_BASE:-https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist}"
 echo "1/7 Copio l'app in $DEST"
 $SUDO mkdir -p "$DEST"
 base64 -d <<'B64' | $SUDO tar xz -C "$DEST"
-H4sIAJpA92oC/+y9B1gTS/c4vCAqYu9dVlABSUIKoQQpVvSqWLAj4pJsIJJGGmBE0Gtv2Dv2ih0V
+H4sIAGBY92oC/+y9B1gTS/c4vCAqYu9dVlABSUIKoQQpVvSqWLAj4pJsIJJGGmBE0Gtv2Dv2ih0V
 r6Ci1971WlBRsWPDXlAQvpndlE2h6PV9f8//e17uNclOPXPmtDlzZhaTyxl8pRL5T/4xwZ+Xpyfx
 Df5Mv1lMNtfbS59GprNYTC82gjKR/8KfWqnCFKB7hUymKq9cRfn/j/7x4Li0DihKp0dG8ZyFmNBX
 yPWj05UiAR6JKUAKR8jCMZDCxxQC8Ej8gUcVHq/iObNAJksAHiVqFQ6yvby8uFyYHSlTCHBQHefg
@@ -4978,7 +4978,7 @@ DF
             if $SUDO docker image inspect "$OIMG" >/dev/null 2>&1; then
               $SUDO docker rm -f giot-office >/dev/null 2>&1 || true
               if $SUDO docker run -d --name giot-office --restart unless-stopped --network host --read-only --tmpfs /tmp:size=384m \
-                   --log-opt max-size=10m --log-opt max-file=3 --cap-drop ALL --security-opt no-new-privileges --memory "$([ "${MEMMB:-0}" -lt 1800 ] && echo 640m || echo 1g)" --pids-limit 200 --user 1000:1000 \
+                   --log-opt max-size=10m --log-opt max-file=3 --cap-drop ALL --security-opt no-new-privileges --memory "$([ "${MEMMB:-0}" -lt 1800 ] && echo 640m || echo 1g)" --pids-limit 200 --oom-score-adj 500 --user 1000:1000 \
                    -e OFFICE_PORT=3003 -e OFFICE_BIND=127.0.0.1 -e OFFICE_KEY="$($SUDO cat "$KDIR/office.key")" \
                    -v "$ODIR":/app:ro "$OIMG" python3 /app/office-server.py >/dev/null 2>&1; then
                 sleep "${OFFICE_SETTLE:-12}"
@@ -5004,6 +5004,7 @@ DF
         elif [ "${MEMMB:-0}" -lt 700 ] && [ "$SBMODE" != force ]; then echo "   Code: saltato (servono almeno ~700 MB di RAM, qui ce ne sono ${MEMMB:-?} MB)."
         else
           # macchine piccole (es. Oracle E2.1.Micro, 1 GB): versione leggera, un comando alla volta e memoria contenuta
+          SWAPMB=$(awk '/SwapTotal/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0); SWAPMB="${SWAPMB_OVERRIDE:-$SWAPMB}"
           if [ "${MEMMB:-0}" -lt 1800 ]; then SBMEM=384m; SBPIDS=128; SBXTRA="-e SB_LIGHT=1 -e SB_MAX_GLOBAL=1 -e SB_NODE_OPTIONS=--max-old-space-size=256"; SBDESC="versione leggera: ${MEMMB} MB di RAM sul server"
           else SBMEM=1g; SBPIDS=256; SBXTRA=""; SBDESC="1 GB riservato"; fi
           $SUDO mkdir -p "$SDIR" "$WSDIR" "$APPSDIR"
@@ -5163,13 +5164,15 @@ UNIT
               fi
               rm -rf "$SBD"
             fi
+            # con lo swap del server presente, il banco di lavoro può usarne un po' (le installazioni npm medie finiscono invece di fermarsi)
+            SBSWAP=$SBMEM; [ "$SBMEM" = 384m ] && [ "${SWAPMB:-0}" -ge 1024 ] && { SBSWAP=768m; SBDESC="$SBDESC, più 384 MB di swap"; }
             if $SUDO docker image inspect "$SIMG" >/dev/null 2>&1; then
               $SUDO docker rm -f giot-sandbox >/dev/null 2>&1 || true
               SBGUARDS="169.254.169.254:80"; [ -n "$SBGW" ] && SBGUARDS="$SBGW:3001,$SBGW:3002,$SBGW:3003,$SBGW:22,$SBGW:443,$SBGUARDS"
               sb_run() {
                 $SUDO docker run -d --name giot-sandbox --restart unless-stopped --network giot-sb --dns 1.1.1.1 --dns 8.8.8.8 -p 127.0.0.1:3004:3004 \
                   --read-only --tmpfs /tmp:size=512m,exec,mode=1777 --log-opt max-size=10m --log-opt max-file=3 \
-                  --cap-drop ALL --security-opt no-new-privileges --memory $SBMEM --memory-swap $SBMEM --pids-limit $SBPIDS "$@" --user 1000:1000 $SBXTRA \
+                  --cap-drop ALL --security-opt no-new-privileges --memory $SBMEM --memory-swap $SBSWAP --oom-score-adj 800 --pids-limit $SBPIDS "$@" --user 1000:1000 $SBXTRA \
                   -e SB_PORT=3004 -e SB_BIND=0.0.0.0 -e SB_KEY_FILE=/run/sb.key -e WS_ROOT=/workspaces -e PUB_ROOT=/published -e SB_GUARDS="$SBGUARDS" \
                   -v "$SDIR":/app:ro -v "$WSDIR":/workspaces -v "$APPSDIR":/published -v "$KDIR/sandbox.key":/run/sb.key:ro \
                   "$SIMG" node /app/sandbox-server.mjs >/dev/null 2>&1
@@ -5183,7 +5186,7 @@ UNIT
         fi
         $SUDO docker rm -f giot-fetch >/dev/null 2>&1 || true
         if $SUDO docker run -d --name giot-fetch --restart unless-stopped --network host --read-only --tmpfs /tmp \
-             --log-opt max-size=10m --log-opt max-file=3 --cap-drop ALL --security-opt no-new-privileges --memory 384m --pids-limit 64 --user node \
+             --log-opt max-size=10m --log-opt max-file=3 --cap-drop ALL --security-opt no-new-privileges --memory 384m --pids-limit 64 --oom-score-adj -200 --user node \
              -e PORT=3002 -e BIND=127.0.0.1 -e AUTH_BASE=http://127.0.0.1:3001 -e DATA_DIR=/data -e VAULT_KEY_FILE=/key/vault.key $OFFICE_ENV $SB_ENV \
              -v "$FDIR":/app:ro -v "$FDATA":/data -v "$KDIR":/key:ro node:22-alpine node /app/server.mjs >/dev/null 2>&1; then started=1
         else echo "   Docker non è riuscito ad avviarlo."; fi
@@ -5284,4 +5287,8 @@ else
   echo "   (caddy non trovato: salto controllo e ricarica)"
 fi
 echo
+if command -v free >/dev/null 2>&1; then
+  echo "Memoria: $(free -m | awk '/^Mem:/ {print $2" MB di RAM ("$7" MB disponibili)"} /^Swap:/ {print "· swap "$2" MB ("$3" MB in uso)"}' | tr '\n' ' ')"
+fi
+if command -v docker >/dev/null 2>&1; then echo "Servizi: $($SUDO docker ps --format '{{.Names}}' 2>/dev/null | grep '^giot-' | sort | tr '\n' ' ')"; fi
 echo "Fatto. Apri https://$HOST/chat/ (se vedi la versione vecchia, ricarica la pagina)."
