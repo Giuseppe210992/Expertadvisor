@@ -3,7 +3,7 @@
 ## Installazione
 
 ```
-__COMANDO__
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-latest.sh -o installa-giot-chat.sh && echo "784c396932d9f62a6137c1e93c836b457769f922c47d3c63c28c4553b40468bf  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
 ```
 
 ## Cosa cambia
@@ -40,4 +40,8 @@ __COMANDO__
 4. Genera il token e incollalo in giot.ai → Code → **GitHub**. Mai in una chat.
 
 ## Collaudi
-__COLLAUDI__
+- Code + GitHub sul server, con un GitHub finto: 26/26. Token mai restituito né visibile al banco di lavoro; niente node_modules/.env/chiavi inviati; Pages attivato prima del push; esito riuscito/fallito con le righe d'errore.
+- Nel browser: 22/22. Modelli di partenza, collegamento del token, l'agente pubblica, GitHub fallisce, l'agente legge il registro, corregge, ripubblica; pannello GitHub; conferma Consenti/Annulla.
+- Prova con il browser (lo script che gira su GitHub), eseguita qui con Chromium vero: pagina buona OK; errore JavaScript, percorso assoluto e pagina vuota bloccati con un messaggio chiaro. I modelli statico, Vite e React compilano e superano la prova.
+- Regressione completa: app 92, 45, 36, 40, 37, 8, 14, 9, 22, 16, 19, 10, 29, 22, office 36, compilazione 13, esportazione 10; server 87, 106, 32, 41, 29, 31, 5, 41, 20, 25, 17, chiavi 10, Code 35, connettori 11, GitHub 26. Tutto verde.
+- Non ancora provato con il GitHub vero: serve il tuo token.
