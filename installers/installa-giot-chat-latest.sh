@@ -13,7 +13,7 @@ LBASE="${PDFLIB_BASE:-https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist}"
 echo "1/7 Copio l'app in $DEST"
 $SUDO mkdir -p "$DEST"
 base64 -d <<'B64' | $SUDO tar xz -C "$DEST"
-H4sIAJY/92oC/+y9B1gTS/c4vCAqYu9dVlABSUIKoQQpVvSqWLAj4pJsIJJGGmBE0Gtv2Dv2ih0V
+H4sIAJpA92oC/+y9B1gTS/c4vCAqYu9dVlABSUIKoQQpVvSqWLAj4pJsIJJGGmBE0Gtv2Dv2ih0V
 r6Ci1971WlBRsWPDXlAQvpndlE2h6PV9f8//e17uNclOPXPmtDlzZhaTyxl8pRL5T/4xwZ+Xpyfx
 Df5Mv1lMNtfbS59GprNYTC82gjKR/8KfWqnCFKB7hUymKq9cRfn/j/7x4Li0DihKp0dG8ZyFmNBX
 yPWj05UiAR6JKUAKR8jCMZDCxxQC8Ej8gUcVHq/iObNAJksAHiVqFQ6yvby8uFyYHSlTCHBQHefg
@@ -4959,25 +4959,26 @@ OB64
               $SUDO sh -c 'umask 077; set -C; head -c 24 /dev/urandom | od -An -tx1 | tr -d " \n" > "$1"' _ "$KDIR/office.key" || true
               $SUDO chown 1000:1000 "$KDIR/office.key" 2>/dev/null || true; $SUDO chmod 600 "$KDIR/office.key"
             fi
-            OIMG="giot-office:1"
+            OIMG="giot-office:2"   # :2 = Python completo (la :1 usava python3-minimal, senza il modulo hmac: non partiva)
             if ! $SUDO docker image inspect "$OIMG" >/dev/null 2>&1; then
               echo "   Preparo il servizio Office (la prima volta scarica LibreOffice: 5-10 minuti, una volta sola)"
               OBD=$(mktemp -d)
               cat > "$OBD/Dockerfile" <<'DF'
 FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-calc-nogui python3-minimal fonts-liberation fonts-dejavu-core fonts-crosextra-carlito fonts-crosextra-caladea ca-certificates procps && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-calc-nogui python3 fonts-liberation fonts-dejavu-core fonts-crosextra-carlito fonts-crosextra-caladea ca-certificates procps && rm -rf /var/lib/apt/lists/*
 DF
               if ! $SUDO timeout 1500 docker build -t "$OIMG" "$OBD" > /tmp/giot-office-build.log 2>&1; then
                 echo "   Costruzione del servizio Office non riuscita. Ultime righe (registro completo in /tmp/giot-office-build.log):"
                 tail -n 8 /tmp/giot-office-build.log | sed 's/^/      /'
               fi
               rm -rf "$OBD"
+              $SUDO docker image inspect "$OIMG" >/dev/null 2>&1 && { $SUDO docker rm -f giot-office >/dev/null 2>&1 || true; $SUDO docker image rm giot-office:1 >/dev/null 2>&1 || true; }
             fi
             if $SUDO docker image inspect "$OIMG" >/dev/null 2>&1; then
               $SUDO docker rm -f giot-office >/dev/null 2>&1 || true
               if $SUDO docker run -d --name giot-office --restart unless-stopped --network host --read-only --tmpfs /tmp:size=384m \
-                   --log-opt max-size=10m --log-opt max-file=3 --cap-drop ALL --security-opt no-new-privileges --memory 1g --pids-limit 200 --user 1000:1000 \
+                   --log-opt max-size=10m --log-opt max-file=3 --cap-drop ALL --security-opt no-new-privileges --memory "$([ "${MEMMB:-0}" -lt 1800 ] && echo 640m || echo 1g)" --pids-limit 200 --user 1000:1000 \
                    -e OFFICE_PORT=3003 -e OFFICE_BIND=127.0.0.1 -e OFFICE_KEY="$($SUDO cat "$KDIR/office.key")" \
                    -v "$ODIR":/app:ro "$OIMG" python3 /app/office-server.py >/dev/null 2>&1; then
                 sleep "${OFFICE_SETTLE:-12}"
