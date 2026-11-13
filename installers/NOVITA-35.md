@@ -3,7 +3,7 @@
 ## Installazione
 
 ```
-__COMANDO__
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-latest.sh -o installa-giot-chat.sh && echo "65ac39ae3df9de51529cb5aa66cd94b629f375c466c9e8b9bf4f3f86a9c7b59e  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
 ```
 
 La prima volta l'installatore prepara anche il banco di lavoro di Code (1-3 minuti in più).
@@ -41,4 +41,8 @@ La prima volta l'installatore prepara anche il banco di lavoro di Code (1-3 minu
 Per ora Code pubblica **app statiche** (HTML/CSS/JS, oppure Vite/Astro dopo la build). I programmi con un server proprio che resta acceso arriveranno in un secondo momento.
 
 ## Collaudi
-__COLLAUDI__
+- Code nel browser: 29/29 (sezioni alla pari, nuovo progetto, agente con errore → correzione → anteprima, terminale, file, stop dopo 3 tentativi, Consenti/Annulla, app isolata dai dati della chat, telefono).
+- Banco di lavoro e inoltro: 35/35 (accesso, percorsi «..» e collegamenti simbolici rifiutati, tempo massimo, un comando per volta, uscita troncata, comandi spenti se non isolato, pubblicazione senza file nascosti come .env).
+- Scarica dai progetti: 10/10 (stessi byte, anche dal secondo dispositivo).
+- Regressione completa: app 92, 45, 36, 40, 37, 8, 14, 9, 22, 16, 19, 10, 29, office 36, compilazione 13, esportazione 10; server 87, 106, 32, 41, 29, 31, 5, 41, 20, 25, 17, chiavi 10, Code 35. Tutto verde.
+- Installatore: come il 34 in tutti i casi, più Code attivo, Code che non parte (resto invariato, niente /apps) e Code saltato. Chiave dell'archivio e chiave di Code mai sostituite.
