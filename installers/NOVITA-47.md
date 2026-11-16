@@ -2,7 +2,9 @@
 
 ## Installazione
 
-Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-47.sh`).
+```
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-47.sh -o installa-giot-chat.sh && echo "a32becdb4d797caa345a9ce6aa77ae0b9422d6ef0a9c147633601a663b5e2c99  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
+```
 
 ## Cosa cambia
 - **Scelta del modulo nel progetto:**
@@ -18,4 +20,6 @@ Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-47
 ## Collaudi
 - Progetto con fattura, restituzione assegno e due dichiarazioni: 12/12.
   - «Compila il modulo fatture bozza n.49 mezzo assegno…» sceglie la fattura;
-  - «Compila la dichiarazione» chiede quale delle due e compila quella scelta.
+  - «Compila la dichiarazione» chiede quale delle due e compila quella scelta;
+  - anno «26» e totale «1.220» davanti al «,00» stampato.
+- Regressione completa: tutto verde (interfaccia 24 collaudi, server 19 collaudi, installatore uguale al 46).
