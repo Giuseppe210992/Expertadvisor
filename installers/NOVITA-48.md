@@ -2,7 +2,9 @@
 
 ## Installazione
 
-Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-48.sh`).
+```
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-48.sh -o installa-giot-chat.sh && echo "c7349fad428c4bcd7c938c1b4a232a18c9e82597f40d98518780ee97304d5d7c  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
+```
 
 ## Cosa cambia
 - **Regole fisse, non affidate al modello AI.** I dati principali si ricavano dalla tua richiesta e dal documento in foto, e si mettono sempre allo stesso modo:
@@ -30,3 +32,4 @@ Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-48
 ## Collaudi
 - Fattura con un modello che risponde male apposta (49 nel nome e nella via, X nell'indirizzo, data intera nello spazio corto): il PDF esce corretto. Prova della fattura 22/22.
 - Regole da sole: 10/10.
+- Regressione completa: tutto verde (interfaccia 24 collaudi, server 20 collaudi; app4 e app6 rilanciati da soli dopo un rallentamento della macchina: 36/36 e 37/37).
