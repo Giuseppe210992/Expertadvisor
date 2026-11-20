@@ -2,7 +2,9 @@
 
 ## Installazione
 
-Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-50.sh`).
+```
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-50.sh -o installa-giot-chat.sh && echo "5794f8b67f44c358410faa4562c002ad14e0de9c3e1fa209697f787361a1114e  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
+```
 
 ## Cosa cambia
 - **.doc caricati quando il convertitore non c'era:** nel progetto ne restava solo una copia semplificata, che perdeva:
@@ -20,3 +22,4 @@ Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-50
   - caricato come copia semplificata e poi compilato con il convertitore attivo.
 
   In entrambi i casi: carattere Times dell'originale, maiuscole conservate, nome dentro la frase, data «__/__/____» sostituita per intero.
+- Regressione completa: tutto verde (interfaccia 25 collaudi + variante senza convertitore, server 20 collaudi).
