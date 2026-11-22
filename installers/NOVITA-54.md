@@ -2,7 +2,9 @@
 
 ## Installazione
 
-Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-54.sh`).
+```
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-54.sh -o installa-giot-chat.sh && echo "4712ef6d99eb8a93e79726109ecd5f5156d5368ed32fb8b49580811c533c3dd7  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
+```
 
 ## Cosa cambia
 - **«Accedi con Google» per gli amici** nella pagina di accesso.
@@ -38,3 +40,4 @@ Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-54
   - memoria separata;
   - secondo amico rifiutato;
   - sospensione.
+- Regressione completa: tutto verde (interfaccia 28 collaudi + 2 varianti, server 22 collaudi).
