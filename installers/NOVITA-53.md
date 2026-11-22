@@ -2,7 +2,9 @@
 
 ## Installazione
 
-Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-53.sh`).
+```
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-53.sh -o installa-giot-chat.sh && echo "d16d50a960dc6cfd1e6b5b07ac264db861e6b9042b5ff5b6976e52a98ceb94d2  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
+```
 
 ## Cosa cambia
 - **Google Calendar collegabile** da Impostazioni → Google Calendar, con l'accesso al proprio account Google (OAuth).
@@ -32,3 +34,4 @@ Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-53
   - impegni letti in chat;
   - appuntamento creato solo dopo la conferma;
   - scollegamento.
+- Regressione completa: tutto verde (interfaccia 27 collaudi + 2 varianti, server 21 collaudi).
