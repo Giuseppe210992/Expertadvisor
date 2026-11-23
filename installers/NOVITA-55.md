@@ -2,7 +2,9 @@
 
 ## Installazione
 
-Comando e impronta sha256 nel messaggio di consegna (file `installa-giot-chat-55.sh`).
+```
+ssh -i ~/.ssh/navetta ubuntu@158.180.230.0 'cd ~ && curl -fsSL https://raw.githubusercontent.com/Giuseppe210992/Expertadvisor/claude/modest-mayer-c31pbe/installers/installa-giot-chat-55.sh -o installa-giot-chat.sh && echo "964208f1ec51b3be38052cd6a8ed0475d938006e07cfea7480a6af4084a1decb  installa-giot-chat.sh" | sha256sum -c - && bash installa-giot-chat.sh'
+```
 
 ## Perché prima non si poteva
 FreeLLMAPI passa ai generatori solo la descrizione, mai un'immagine. Per «modificare» giot descriveva la foto a parole e ne faceva un'altra da zero: per questo volti e dettagli cambiavano.
@@ -43,3 +45,9 @@ FreeLLMAPI passa ai generatori solo la descrizione, mai un'immagine. Per «modif
   - modifica a zona con zero pixel cambiati fuori dalla zona;
   - sfondo trasparente vero;
   - foto modificata davvero in chat, suggerimenti, varianti, impostazioni.
+- Prova di base: 92/92. Regressione completa: tutto verde (interfaccia 29 collaudi + 2 varianti, server 23 collaudi).
+
+## Riferimenti studiati su GitHub
+- **TOAST UI Image Editor** (MIT) e **Filerobot** (MIT): riferimenti per ritaglio, filtri, testo e strumenti in basso. Rifatti in modo leggero, senza librerie da 1 MB.
+- **IOPaint** (Apache-2.0): riferimento per il pennello a maschera. Il suo modello richiede una GPU; qui la zona va al generatore e il resto si ricompone identico.
+- **imgly background-removal** (AGPL, modello da più di 40 MB): scartato per la licenza e il peso. Usata invece la tecnica dello schermo verde.
